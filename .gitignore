@@ -16,3 +16,25 @@ crash.*.log
 # CLI configuration files
 .terraformrc
 terraform.rc
+
+# Azure specific
+*.env
+**/azurekeys.txt
+**/azure.conf
+**/*connection_string*
+**/*connectionstring*
+**/*access_key*
+**/*accesskey*
+backend.conf
+*.key
+**/secrets/*
+
+# General secrets
+**/.secrets/*
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.p12
+**/*.asc
+**/.env*
+**/*.secret
