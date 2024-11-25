@@ -16,6 +16,73 @@ This project implements Infrastructure as Code (IaC) for Azure cloud resources u
 - Terraform
 - Git
 
+### 🚀 Bootstrap Setup (Required First)
+
+#### 💡 Understanding Bootstrap Resources
+Before implementing our infrastructure with Terraform, we need to create foundation resources that will store the Terraform state. These are called "bootstrap" or "foundation" resources and are created once, either manually or via script.
+
+#### 🤔 Why Manual Bootstrap?
+- State storage must exist before Terraform can store state
+- These resources are created once and rarely changed
+- They form the foundation that enables Terraform to work
+
+#### 🛠️ Implementation Options
+
+1. **⭐ Scripted Approach (Recommended):**
+   ```bash{.no-copy}
+   # Bootstrap script (bootstrap.sh in scripts directory)
+   #!/bin/bash
+
+   # Set variables
+   $ RESOURCE_GROUP_NAME="terraform-state-rg"
+   $ LOCATION="eastus"
+   $ STORAGE_ACCOUNT_NAME="tfstate$(openssl rand -hex 4)"
+   $ CONTAINER_NAME="tfstate"
+
+   # Create Resource Group
+   $ echo "Creating Resource Group..."
+   $ az group create \
+       --name $RESOURCE_GROUP_NAME \
+       --location $LOCATION \
+       --tags Environment=Management \
+             Project=Terraform \
+             Purpose=State-Storage
+
+   # Create Storage Account
+   $ echo "Creating Storage Account..."
+   $ az storage account create \
+       --resource-group $RESOURCE_GROUP_NAME \
+       --name $STORAGE_ACCOUNT_NAME \
+       --sku Standard_LRS \
+       --encryption-services blob \
+       --https-only true \
+       --min-tls-version TLS1_2 \
+       --allow-blob-public-access false \
+       --tags Environment=Management \
+             Project=Terraform \
+             Purpose=State-Storage
+
+   # Get Storage Account Key
+   $ echo "Retrieving Storage Account Key..."
+   $ ACCOUNT_KEY=$(az storage account keys list \
+       --resource-group $RESOURCE_GROUP_NAME \
+       --account-name $STORAGE_ACCOUNT_NAME \
+       --query '[0].value' -o tsv)
+
+   # Create Container
+   $ echo "Creating Storage Container..."
+   $ az storage container create \
+       --name $CONTAINER_NAME \
+       --account-name $STORAGE_ACCOUNT_NAME \
+       --account-key $ACCOUNT_KEY
+
+   # Output important information
+   $ echo "Bootstrap Complete! Please save these details:"
+   $ echo "Resource Group: $RESOURCE_GROUP_NAME"
+   $ echo "Storage Account: $STORAGE_ACCOUNT_NAME"
+   $ echo "Container: $CONTAINER_NAME"
+
+
 ### Installation
 1. Clone the repository:
    ```bash
