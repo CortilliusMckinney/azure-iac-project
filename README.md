@@ -1,4 +1,4 @@
-```markdown
+
 # Azure Infrastructure as Code (IaC) Project
 
 ## 📋 Overview
@@ -9,6 +9,8 @@ This project implements Infrastructure as Code (IaC) for Azure cloud resources u
 - `environments/` - Environment-specific configurations (dev, staging, prod)
 - `scripts/` - Utility scripts and tools
 
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -16,41 +18,43 @@ This project implements Infrastructure as Code (IaC) for Azure cloud resources u
 - Terraform
 - Git
 
+---
+
 ### 🚀 Bootstrap Setup (Required First)
 
 #### 💡 Understanding Bootstrap Resources
-Before implementing our infrastructure with Terraform, we need to create foundation resources that will store the Terraform state. These are called "bootstrap" or "foundation" resources and are created once, either manually or via script.
+Before implementing our infrastructure with Terraform, we need to create foundational resources that will store the Terraform state. These are called "bootstrap" or "foundation" resources and are created once, either manually or via script.
 
 #### 🤔 Why Manual Bootstrap?
-- State storage must exist before Terraform can store state
-- These resources are created once and rarely changed
-- They form the foundation that enables Terraform to work
+- State storage must exist before Terraform can store state.
+- These resources are created once and rarely changed.
+- They form the foundation that enables Terraform to work.
+
+---
 
 #### 🛠️ Implementation Options
 
 1. **⭐ Scripted Approach (Recommended):**
-   ```bash{.no-copy}
-   # Bootstrap script (bootstrap.sh in scripts directory)
+   ```bash
    #!/bin/bash
+   echo "Setting up Bootstrap Resources..."
 
-   # Set variables
-   $ RESOURCE_GROUP_NAME="terraform-state-rg"
-   $ LOCATION="eastus"
-   $ STORAGE_ACCOUNT_NAME="tfstate$(openssl rand -hex 4)"
-   $ CONTAINER_NAME="tfstate"
+   # Variables
+   RESOURCE_GROUP_NAME="terraform-state-rg"
+   LOCATION="eastus"
+   STORAGE_ACCOUNT_NAME="tfstate$(openssl rand -hex 4)"
+   CONTAINER_NAME="tfstate"
 
    # Create Resource Group
-   $ echo "Creating Resource Group..."
-   $ az group create \
+   echo "Creating Resource Group..."
+   az group create \
        --name $RESOURCE_GROUP_NAME \
        --location $LOCATION \
-       --tags Environment=Management \
-             Project=Terraform \
-             Purpose=State-Storage
+       --tags Environment=Management Project=Terraform Purpose=State-Storage
 
    # Create Storage Account
-   $ echo "Creating Storage Account..."
-   $ az storage account create \
+   echo "Creating Storage Account..."
+   az storage account create \
        --resource-group $RESOURCE_GROUP_NAME \
        --name $STORAGE_ACCOUNT_NAME \
        --sku Standard_LRS \
@@ -58,30 +62,73 @@ Before implementing our infrastructure with Terraform, we need to create foundat
        --https-only true \
        --min-tls-version TLS1_2 \
        --allow-blob-public-access false \
-       --tags Environment=Management \
-             Project=Terraform \
-             Purpose=State-Storage
+       --tags Environment=Management Project=Terraform Purpose=State-Storage
 
-   # Get Storage Account Key
-   $ echo "Retrieving Storage Account Key..."
-   $ ACCOUNT_KEY=$(az storage account keys list \
+   # Retrieve Storage Account Key
+   ACCOUNT_KEY=$(az storage account keys list \
        --resource-group $RESOURCE_GROUP_NAME \
        --account-name $STORAGE_ACCOUNT_NAME \
        --query '[0].value' -o tsv)
 
    # Create Container
-   $ echo "Creating Storage Container..."
-   $ az storage container create \
+   echo "Creating Storage Container..."
+   az storage container create \
        --name $CONTAINER_NAME \
        --account-name $STORAGE_ACCOUNT_NAME \
        --account-key $ACCOUNT_KEY
 
-   # Output important information
-   $ echo "Bootstrap Complete! Please save these details:"
-   $ echo "Resource Group: $RESOURCE_GROUP_NAME"
-   $ echo "Storage Account: $STORAGE_ACCOUNT_NAME"
-   $ echo "Container: $CONTAINER_NAME"
+   echo "Bootstrap Complete!"
+   echo "Resource Group: $RESOURCE_GROUP_NAME"
+   echo "Storage Account: $STORAGE_ACCOUNT_NAME"
+   echo "Container: $CONTAINER_NAME"
+   ```
 
+2. **🖥️ Azure Portal Approach (Alternative):**
+   - Navigate to **Resource Groups** and click **+ Create**.
+     - Name: `terraform-state-rg`
+     - Region: Closest to your resources.
+     - Tags: Add tags like Environment, Project, etc.
+   - Navigate to **Storage Accounts** and click **+ Create**.
+     - Use the same Resource Group.
+     - Storage Account Name: Unique name (e.g., `tfstate[unique-suffix]`).
+     - Enable secure transfer, encryption, and TLS 1.2+.
+   - In **Containers**, create a container named `tfstate`.
+
+3. **☁️ Azure CloudShell Approach:**
+   ```bash
+   curl -o bootstrap.sh https://raw.githubusercontent.com/YOUR-REPO/azure-iac-project/main/scripts/bootstrap.sh
+   chmod +x bootstrap.sh
+   ./bootstrap.sh
+   ```
+
+---
+
+### ✅ Verification Steps:
+After running the script or using the portal:
+```bash
+# Verify Resource Group
+az group show --name $RESOURCE_GROUP_NAME
+
+# Verify Storage Account
+az storage account show \
+    --resource-group $RESOURCE_GROUP_NAME \
+    --name $STORAGE_ACCOUNT_NAME
+
+# Verify Container
+az storage container exists \
+    --name $CONTAINER_NAME \
+    --account-name $STORAGE_ACCOUNT_NAME \
+    --account-key $ACCOUNT_KEY
+```
+
+---
+
+### 🔒 Security Notes:
+- Store state access keys securely (e.g., in Azure Key Vault).
+- Use RBAC roles for granular permissions.
+- Enable diagnostics and logging for all storage accounts.
+
+---
 
 ### Installation
 1. Clone the repository:
@@ -100,6 +147,8 @@ Before implementing our infrastructure with Terraform, we need to create foundat
    terraform init
    ```
 
+---
+
 ## 🔧 Usage
 1. Select your environment:
    ```bash
@@ -116,6 +165,8 @@ Before implementing our infrastructure with Terraform, we need to create foundat
    terraform apply
    ```
 
+---
+
 ## 🏗️ Infrastructure Components
 - Resource Groups
 - Virtual Networks
@@ -123,80 +174,66 @@ Before implementing our infrastructure with Terraform, we need to create foundat
 - Storage Accounts
 - Key Vault Integration
 
+---
+
 ## 🔒 Security Notes
-- Sensitive values are stored in Azure Key Vault
-- State files are stored in Azure Storage
-- Access control is managed through Azure RBAC
-- All secrets are encrypted at rest
+- Sensitive values are stored in Azure Key Vault.
+- State files are stored in Azure Storage.
+- Access control is managed through Azure RBAC.
+- All secrets are encrypted at rest.
+
+---
 
 ## 📚 Documentation
-- Module documentation is available in each module directory
-- Environment-specific documentation is in respective environment folders
-- Additional documentation can be found in the `docs/` directory
+- Module documentation is available in each module directory.
+- Environment-specific documentation is in respective environment folders.
+- Additional documentation can be found in the `docs/` directory.
+
+---
 
 ## 🤝 Contributing
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. Fork the repository.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
+
+---
 
 ## 📝 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
 
 ## 🔍 Version Control
-- All infrastructure changes are version controlled
-- Follow semantic versioning for releases
-- Each environment has its own state file
+- All infrastructure changes are version controlled.
+- Follow semantic versioning for releases.
+- Each environment has its own state file.
+
+---
 
 ## ⚡ CI/CD Pipeline
-- Automated testing through GitHub Actions
-- Infrastructure validation on PR
-- Automated deployment to dev environment
-- Manual approval required for production deployments
+- Automated testing through GitHub Actions.
+- Infrastructure validation on PR.
+- Automated deployment to dev environment.
+- Manual approval required for production deployments.
+
+---
 
 ## 📊 Monitoring
-- Azure Monitor integration
-- Resource health tracking
-- Cost management
-- Performance metrics
+- Azure Monitor integration.
+- Resource health tracking.
+- Cost management.
+- Performance metrics.
+
+---
 
 ## ✍️ Authors
-* Your Name - *Initial work*
+* Cortillius Mckinney- *Initial work*
+
+---
 
 ## 💡 Acknowledgments
-* HashiCorp Terraform documentation
-* Azure Cloud documentation
-* Infrastructure as Code best practices
-```
-
-### When to Add This Content:
-Add this content after running:
-```bash
-# Create and switch to main branch
-git checkout -b main
-
-# Create README with content
-echo "# Azure Infrastructure as Code Project" > README.md
-# At this point, open README.md in your text editor and paste the above content
-
-# Create initial .gitignore
-cat << EOF > .gitignore
-[.gitignore content...]
-EOF
-
-# Initial commit
-git add .
-git commit -m "Initial project structure and documentation"
-git push -u origin main
-```
-
-### 💡 Important Notes:
-- Customize the README content based on your specific project needs
-- Update the username in the clone URL
-- Keep the documentation up to date as the project evolves
-
-### 🔒 Security Notes:
-- Ensure no sensitive information is included in the README
-- Review all documentation before committing
-- Keep security-related documentation general without exposing specific details
+* HashiCorp Terraform documentation.
+* Azure Cloud documentation.
+* Infrastructure as Code best practices.
