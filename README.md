@@ -1,4 +1,4 @@
-
+```markdown
 # Azure Infrastructure as Code (IaC) Project
 
 ## 📋 Overview
@@ -9,37 +9,37 @@ This project implements Infrastructure as Code (IaC) for Azure cloud resources u
 - `environments/` - Environment-specific configurations (dev, staging, prod)
 - `scripts/` - Utility scripts and tools
 
----
-
 ## 🚀 Getting Started
 
 ### Prerequisites
 - Azure CLI
 - Terraform
 - Git
+- Visual Studio Code
 
----
-
-### 🚀 Bootstrap Setup (Required First)
+### Bootstrap Setup (Required First)
 
 #### 💡 Understanding Bootstrap Resources
-Before implementing our infrastructure with Terraform, we need to create foundational resources that will store the Terraform state. These are called "bootstrap" or "foundation" resources and are created once, either manually or via script.
+Before implementing our infrastructure with Terraform, we need to create foundation resources that will store the Terraform state. These are called "bootstrap" or "foundation" resources and are created once, either manually or via script.
 
 #### 🤔 Why Manual Bootstrap?
-- State storage must exist before Terraform can store state.
-- These resources are created once and rarely changed.
-- They form the foundation that enables Terraform to work.
+- State storage must exist before Terraform can store state
+- These resources are created once and rarely changed
+- They form the foundation that enables Terraform to work
 
----
+#### 🛠️ Implementation Using VS Code
 
-#### 🛠️ Implementation Options
+1. **📂 Create Bootstrap Script:**
+   - In VS Code, create new file: `scripts/bootstrap.sh`
+   - Open Command Palette (Ctrl+Shift+P or Cmd+Shift+P)
+   - Type: "new file"
+   - Enter path: `scripts/bootstrap.sh`
 
-1. **⭐ Scripted Approach (Recommended):**
-   ```bash
+2. **✍️ Add Script Content:**
+   ```bash{.no-copy}
    #!/bin/bash
-   echo "Setting up Bootstrap Resources..."
 
-   # Variables
+   # Set variables
    RESOURCE_GROUP_NAME="terraform-state-rg"
    LOCATION="eastus"
    STORAGE_ACCOUNT_NAME="tfstate$(openssl rand -hex 4)"
@@ -50,7 +50,9 @@ Before implementing our infrastructure with Terraform, we need to create foundat
    az group create \
        --name $RESOURCE_GROUP_NAME \
        --location $LOCATION \
-       --tags Environment=Management Project=Terraform Purpose=State-Storage
+       --tags Environment=Management \
+             Project=Terraform \
+             Purpose=State-Storage
 
    # Create Storage Account
    echo "Creating Storage Account..."
@@ -62,9 +64,12 @@ Before implementing our infrastructure with Terraform, we need to create foundat
        --https-only true \
        --min-tls-version TLS1_2 \
        --allow-blob-public-access false \
-       --tags Environment=Management Project=Terraform Purpose=State-Storage
+       --tags Environment=Management \
+             Project=Terraform \
+             Purpose=State-Storage
 
-   # Retrieve Storage Account Key
+   # Get Storage Account Key
+   echo "Retrieving Storage Account Key..."
    ACCOUNT_KEY=$(az storage account keys list \
        --resource-group $RESOURCE_GROUP_NAME \
        --account-name $STORAGE_ACCOUNT_NAME \
@@ -77,58 +82,49 @@ Before implementing our infrastructure with Terraform, we need to create foundat
        --account-name $STORAGE_ACCOUNT_NAME \
        --account-key $ACCOUNT_KEY
 
-   echo "Bootstrap Complete!"
+   # Output important information
+   echo "Bootstrap Complete! Please save these details:"
    echo "Resource Group: $RESOURCE_GROUP_NAME"
    echo "Storage Account: $STORAGE_ACCOUNT_NAME"
    echo "Container: $CONTAINER_NAME"
    ```
 
-2. **🖥️ Azure Portal Approach (Alternative):**
-   - Navigate to **Resource Groups** and click **+ Create**.
-     - Name: `terraform-state-rg`
-     - Region: Closest to your resources.
-     - Tags: Add tags like Environment, Project, etc.
-   - Navigate to **Storage Accounts** and click **+ Create**.
-     - Use the same Resource Group.
-     - Storage Account Name: Unique name (e.g., `tfstate[unique-suffix]`).
-     - Enable secure transfer, encryption, and TLS 1.2+.
-   - In **Containers**, create a container named `tfstate`.
-
-3. **☁️ Azure CloudShell Approach:**
-   ```bash
-   curl -o bootstrap.sh https://raw.githubusercontent.com/YOUR-REPO/azure-iac-project/main/scripts/bootstrap.sh
-   chmod +x bootstrap.sh
-   ./bootstrap.sh
+3. **▶️ Execute Script:**
+   - Open VS Code integrated terminal (Ctrl+` or Cmd+`)
+   - Navigate to scripts directory:
+   ```bash{.no-copy}
+   $ cd scripts
+   $ chmod +x bootstrap.sh
+   $ ./bootstrap.sh
    ```
 
----
+4. **💾 Save Script Output:**
+   - Create new file: `scripts/terraform.env`
+   - Store the output values (they'll be needed for backend configuration)
+   ```bash{.no-copy}
+   RESOURCE_GROUP_NAME=terraform-state-rg
+   STORAGE_ACCOUNT_NAME=<your-storage-account-name>
+   CONTAINER_NAME=tfstate
+   ```
 
-### ✅ Verification Steps:
-After running the script or using the portal:
-```bash
-# Verify Resource Group
-az group show --name $RESOURCE_GROUP_NAME
+#### ✅ Verification in VS Code
 
-# Verify Storage Account
-az storage account show \
-    --resource-group $RESOURCE_GROUP_NAME \
-    --name $STORAGE_ACCOUNT_NAME
+1. **📋 Install Azure Extension:**
+   - Open VS Code Extensions (Ctrl+Shift+X or Cmd+Shift+X)
+   - Search for "Azure"
+   - Install "Azure Account" and "Azure Resources"
 
-# Verify Container
-az storage container exists \
-    --name $CONTAINER_NAME \
-    --account-name $STORAGE_ACCOUNT_NAME \
-    --account-key $ACCOUNT_KEY
-```
+2. **🔍 Verify Resources:**
+   - Open Azure extension
+   - Navigate to Resource Groups
+   - Verify `terraform-state-rg` exists
+   - Check Storage Account properties
 
----
-
-### 🔒 Security Notes:
-- Store state access keys securely (e.g., in Azure Key Vault).
-- Use RBAC roles for granular permissions.
-- Enable diagnostics and logging for all storage accounts.
-
----
+3. **🧪 Test Configuration:**
+   ```bash{.no-copy}
+   # In VS Code terminal
+   $ az group show --name $RESOURCE_GROUP_NAME
+   ```
 
 ### Installation
 1. Clone the repository:
@@ -147,8 +143,6 @@ az storage container exists \
    terraform init
    ```
 
----
-
 ## 🔧 Usage
 1. Select your environment:
    ```bash
@@ -165,8 +159,6 @@ az storage container exists \
    terraform apply
    ```
 
----
-
 ## 🏗️ Infrastructure Components
 - Resource Groups
 - Virtual Networks
@@ -174,66 +166,49 @@ az storage container exists \
 - Storage Accounts
 - Key Vault Integration
 
----
-
 ## 🔒 Security Notes
-- Sensitive values are stored in Azure Key Vault.
-- State files are stored in Azure Storage.
-- Access control is managed through Azure RBAC.
-- All secrets are encrypted at rest.
-
----
+- Sensitive values are stored in Azure Key Vault
+- State files are stored in Azure Storage
+- Access control is managed through Azure RBAC
+- All secrets are encrypted at rest
 
 ## 📚 Documentation
-- Module documentation is available in each module directory.
-- Environment-specific documentation is in respective environment folders.
-- Additional documentation can be found in the `docs/` directory.
-
----
+- Module documentation is available in each module directory
+- Environment-specific documentation is in respective environment folders
+- Additional documentation can be found in the `docs/` directory
 
 ## 🤝 Contributing
-1. Fork the repository.
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
-4. Push to the branch (`git push origin feature/AmazingFeature`).
-5. Open a Pull Request.
-
----
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📝 License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
 ## 🔍 Version Control
-- All infrastructure changes are version controlled.
-- Follow semantic versioning for releases.
-- Each environment has its own state file.
-
----
+- All infrastructure changes are version controlled
+- Follow semantic versioning for releases
+- Each environment has its own state file
 
 ## ⚡ CI/CD Pipeline
-- Automated testing through GitHub Actions.
-- Infrastructure validation on PR.
-- Automated deployment to dev environment.
-- Manual approval required for production deployments.
-
----
+- Automated testing through GitHub Actions
+- Infrastructure validation on PR
+- Automated deployment to dev environment
+- Manual approval required for production deployments
 
 ## 📊 Monitoring
-- Azure Monitor integration.
-- Resource health tracking.
-- Cost management.
-- Performance metrics.
-
----
+- Azure Monitor integration
+- Resource health tracking
+- Cost management
+- Performance metrics
 
 ## ✍️ Authors
-* Cortillius Mckinney- *Initial work*
-
----
+* Your Name - *Initial work*
 
 ## 💡 Acknowledgments
-* HashiCorp Terraform documentation.
-* Azure Cloud documentation.
-* Infrastructure as Code best practices.
+* HashiCorp Terraform documentation
+* Azure Cloud documentation
+* Infrastructure as Code best practices
+```
