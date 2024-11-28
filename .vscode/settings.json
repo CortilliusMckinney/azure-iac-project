@@ -1,0 +1,8 @@
+{
+    "files.exclude": {
+      "**/.terraform/*": true,   // Hide Terraform cache files for security
+      "*.tfstate": true,         // Hide state files containing sensitive data
+      "*.tfstate.*": true        // Hide state backup files
+    },
+    "editor.formatOnSave": true  // Ensure consistent code formatting
+  }
