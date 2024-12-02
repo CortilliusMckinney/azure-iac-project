@@ -1,13 +1,16 @@
-```markdown
 # Azure Infrastructure as Code (IaC) Project
 
 ## 📋 Overview
-This project implements Infrastructure as Code (IaC) for Azure cloud resources using Terraform. It provides a structured, modular approach to managing cloud infrastructure through code.
+This project implements Infrastructure as Code (IaC) for Azure cloud resources using Terraform. It provides a structured, modular approach to managing cloud infrastructure through code, with a focus on security, maintainability, and collaboration.
 
 ## 🏗️ Architecture
-- `modules/` - Reusable infrastructure components
+Our project follows a hierarchical structure:
+- `modules/` - Reusable infrastructure components 
 - `environments/` - Environment-specific configurations (dev, staging, prod)
+- `backend-config/` - Secure state management infrastructure
 - `scripts/` - Utility scripts and tools
+- `docs/` - Comprehensive documentation
+- `tests/` - Infrastructure validation tests
 
 ## 🚀 Getting Started
 
@@ -15,118 +18,56 @@ This project implements Infrastructure as Code (IaC) for Azure cloud resources u
 - Azure CLI
 - Terraform
 - Git
-- Visual Studio Code
+- Visual Studio Code with recommended extensions:
+  - HashiCorp Terraform
+  - Azure Terraform
+  - GitLens
 
-### Bootstrap Setup (Required First)
+### Backend Infrastructure Setup
 
-#### 💡 Understanding Bootstrap Resources
-Before implementing our infrastructure with Terraform, we need to create foundation resources that will store the Terraform state. These are called "bootstrap" or "foundation" resources and are created once, either manually or via script.
+#### 💡 Understanding State Management
+Our infrastructure state is managed through a secure Azure Storage configuration that provides:
+- Centralized state storage
+- Concurrent access prevention through state locking
+- Version control of state files
+- Network-isolated access
+- Encryption at rest and in transit
 
-#### 🤔 Why Manual Bootstrap?
-- State storage must exist before Terraform can store state
-- These resources are created once and rarely changed
-- They form the foundation that enables Terraform to work
+#### 🛠️ Implementation Steps
 
-#### 🛠️ Implementation Using VS Code
+1. **Initialize Backend Infrastructure:**
+   ```bash
+   cd backend-config
+   terraform init
+   terraform plan
+   terraform apply
+   ```
 
-1. **📂 Create Bootstrap Script:**
-   - In VS Code, create new file: `scripts/bootstrap.sh`
-   - Open Command Palette (Ctrl+Shift+P or Cmd+Shift+P)
-   - Type: "new file"
-   - Enter path: `scripts/bootstrap.sh`
+2. **Configure Root Backend:**
+   ```bash
+   # Get storage account details
+   STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
+   
+   # Configure backend.tf
+   terraform {
+     backend "azurerm" {
+       resource_group_name  = "terraform-state-rg"
+       storage_account_name = "$STORAGE_ACCOUNT_NAME"
+       container_name      = "tfstate"
+       key                = "terraform.tfstate"
+     }
+   }
+   ```
 
-2. **✍️ Add Script Content:**
-   ```bash{.no-copy}
-   #!/bin/bash
-
-   # Set variables
-   RESOURCE_GROUP_NAME="terraform-state-rg"
-   LOCATION="eastus"
-   STORAGE_ACCOUNT_NAME="tfstate$(openssl rand -hex 4)"
-   CONTAINER_NAME="tfstate"
-
-   # Create Resource Group
-   echo "Creating Resource Group..."
-   az group create \
-       --name $RESOURCE_GROUP_NAME \
-       --location $LOCATION \
-       --tags Environment=Management \
-             Project=Terraform \
-             Purpose=State-Storage
-
-   # Create Storage Account
-   echo "Creating Storage Account..."
-   az storage account create \
-       --resource-group $RESOURCE_GROUP_NAME \
+3. **Verify Security Configuration:**
+   ```bash
+   az storage account show \
        --name $STORAGE_ACCOUNT_NAME \
-       --sku Standard_LRS \
-       --encryption-services blob \
-       --https-only true \
-       --min-tls-version TLS1_2 \
-       --allow-blob-public-access false \
-       --tags Environment=Management \
-             Project=Terraform \
-             Purpose=State-Storage
-
-   # Get Storage Account Key
-   echo "Retrieving Storage Account Key..."
-   ACCOUNT_KEY=$(az storage account keys list \
-       --resource-group $RESOURCE_GROUP_NAME \
-       --account-name $STORAGE_ACCOUNT_NAME \
-       --query '[0].value' -o tsv)
-
-   # Create Container
-   echo "Creating Storage Container..."
-   az storage container create \
-       --name $CONTAINER_NAME \
-       --account-name $STORAGE_ACCOUNT_NAME \
-       --account-key $ACCOUNT_KEY
-
-   # Output important information
-   echo "Bootstrap Complete! Please save these details:"
-   echo "Resource Group: $RESOURCE_GROUP_NAME"
-   echo "Storage Account: $STORAGE_ACCOUNT_NAME"
-   echo "Container: $CONTAINER_NAME"
+       --resource-group terraform-state-rg \
+       --query "{encryption:encryption,networkRuleSet:networkRuleSet}"
    ```
 
-3. **▶️ Execute Script:**
-   - Open VS Code integrated terminal (Ctrl+` or Cmd+`)
-   - Navigate to scripts directory:
-   ```bash{.no-copy}
-   $ cd scripts
-   $ chmod +x bootstrap.sh
-   $ ./bootstrap.sh
-   ```
-
-4. **💾 Save Script Output:**
-   - Create new file: `scripts/terraform.env`
-   - Store the output values (they'll be needed for backend configuration)
-   ```bash{.no-copy}
-   RESOURCE_GROUP_NAME=terraform-state-rg
-   STORAGE_ACCOUNT_NAME=<your-storage-account-name>
-   CONTAINER_NAME=tfstate
-   ```
-
-#### ✅ Verification in VS Code
-
-1. **📋 Install Azure Extension:**
-   - Open VS Code Extensions (Ctrl+Shift+X or Cmd+Shift+X)
-   - Search for "Azure"
-   - Install "Azure Account" and "Azure Resources"
-
-2. **🔍 Verify Resources:**
-   - Open Azure extension
-   - Navigate to Resource Groups
-   - Verify `terraform-state-rg` exists
-   - Check Storage Account properties
-
-3. **🧪 Test Configuration:**
-   ```bash{.no-copy}
-   # In VS Code terminal
-   $ az group show --name $RESOURCE_GROUP_NAME
-   ```
-
-### Installation
+### Project Setup
 1. Clone the repository:
    ```bash
    git clone https://github.com/YOUR-USERNAME/azure-iac-project.git
@@ -160,6 +101,11 @@ Before implementing our infrastructure with Terraform, we need to create foundat
    ```
 
 ## 🏗️ Infrastructure Components
+- Backend State Management:
+  - Secure Azure Storage Account with TLS 1.2
+  - Private blob container
+  - Network-isolated access
+  - State versioning and retention
 - Resource Groups
 - Virtual Networks
 - Security Groups
@@ -167,8 +113,13 @@ Before implementing our infrastructure with Terraform, we need to create foundat
 - Key Vault Integration
 
 ## 🔒 Security Notes
+- State files are secured with:
+  - HTTPS-only access and TLS 1.2 enforcement
+  - Network access restrictions
+  - Blob versioning and retention policies
+  - Managed identity authentication
+  - Private endpoint integration
 - Sensitive values are stored in Azure Key Vault
-- State files are stored in Azure Storage
 - Access control is managed through Azure RBAC
 - All secrets are encrypted at rest
 
@@ -176,6 +127,7 @@ Before implementing our infrastructure with Terraform, we need to create foundat
 - Module documentation is available in each module directory
 - Environment-specific documentation is in respective environment folders
 - Additional documentation can be found in the `docs/` directory
+- Implementation guides in `docs/implementation/`
 
 ## 🤝 Contributing
 1. Fork the repository
@@ -191,6 +143,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - All infrastructure changes are version controlled
 - Follow semantic versioning for releases
 - Each environment has its own state file
+- Changes tracked in CHANGELOG.md
 
 ## ⚡ CI/CD Pipeline
 - Automated testing through GitHub Actions
@@ -203,6 +156,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - Resource health tracking
 - Cost management
 - Performance metrics
+- Security compliance monitoring
 
 ## ✍️ Authors
 * Your Name - *Initial work*
@@ -211,4 +165,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 * HashiCorp Terraform documentation
 * Azure Cloud documentation
 * Infrastructure as Code best practices
-```
