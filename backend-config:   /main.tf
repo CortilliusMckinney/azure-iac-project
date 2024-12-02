@@ -1,5 +1,28 @@
 # Main Terraform configuration for backend storage with enterprise-grade security and monitoring
 
+# First, specify the required providers
+terraform {
+  required_providers {
+    azurerm = {
+      source  = "hashicorp/azurerm"  # Azure Resource Manager provider
+      version = "~> 3.0"             # Use version 3.x for stability and features
+    }
+  }
+}
+
+# Configure the Azure Provider
+provider "azurerm" {
+  features {}  # Required for newer versions of the Azure provider
+}
+
+# Resource Group for State Management
+resource "azurerm_resource_group" "state" {
+  name     = local.resource_group_name
+  location = var.location
+
+  tags = local.common_tags
+}
+
 resource "azurerm_storage_account" "state" {
   # Storage account for Terraform state management
   name                     = local.storage_account_name
