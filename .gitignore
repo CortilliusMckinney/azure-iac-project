@@ -1,0 +1,78 @@
+# Terraform Infrastructure Files
+# ---------------------------
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files (contain sensitive infrastructure state)
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Variable Files
+# ---------------------------
+# Exclude all .tfvars files which might contain sensitive data
+*.tfvars
+*.tfvars.json
+!example.tfvars
+
+# Azure Specific Secrets
+# ---------------------------
+# Azure configuration and keys
+**/azurekeys.txt
+**/azure.conf
+**/*connection_string*
+**/*connectionstring*
+**/*access_key*
+**/*accesskey*
+backend.conf
+.azure/
+
+# Security and Secrets
+# ---------------------------
+# General secret files
+**/.secrets/*
+**/secrets/*
+*.key
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.p12
+**/*.asc
+**/*.secret
+
+# Environment Files
+# ---------------------------
+.env
+.env.*
+!.env.example
+
+# IDE and Editor Files
+# ---------------------------
+# VS Code
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# Operating System Files
+# ---------------------------
+.DS_Store
+Thumbs.db
+
+# CLI Configuration
+# ---------------------------
+.terraformrc
+terraform.rc
+
+# Script and Build Output
+# ---------------------------
+scripts/output/*
+!scripts/output/.gitkeep
+*.log
+*.bak
+EOF
+
+# Verify .gitignore content
+cat .gitignore
