@@ -81,3 +81,7 @@ scripts/output/*
 # Ignore all log and backup files
 *.log
 *.bak
+
+# Backend-specific VS Code settings
+backend-config/.vscode/settings.json
+backend-config/.vscode/tasks.json
