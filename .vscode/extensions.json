@@ -1,0 +1,8 @@
+// .vscode/extensions.json
+{
+    "recommendations": [
+        "hashicorp.terraform",    // Our infrastructure design tools
+        "ms-azuretools.vscode-azureterraform",  // Azure-specific tools
+        "eamodio.gitlens"        // Change tracking tools
+    ]
+}

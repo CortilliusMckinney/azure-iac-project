@@ -1,13 +1,13 @@
 # Terraform Infrastructure Files
 # ---------------------------
-# Local .terraform directories
+# Local .terraform directories that store plugins and modules
 **/.terraform/*
 
 # .tfstate files (contain sensitive infrastructure state)
 *.tfstate
 *.tfstate.*
 
-# Crash log files
+# Crash log files from Terraform operations
 crash.log
 crash.*.log
 
@@ -16,6 +16,7 @@ crash.*.log
 # Exclude all .tfvars files which might contain sensitive data
 *.tfvars
 *.tfvars.json
+# Allow example variable files for team reference
 !example.tfvars
 
 # Azure Specific Secrets
@@ -45,34 +46,38 @@ backend.conf
 
 # Environment Files
 # ---------------------------
+# Ignore all environment files except examples
 .env
 .env.*
 !.env.example
 
 # IDE and Editor Files
 # ---------------------------
-# VS Code
+# VS Code - ignore everything in .vscode except specific files
 .vscode/*
+# Track extension recommendations for team consistency
 !.vscode/extensions.json
-!.vscode/settings.json.example
+# Track actual settings for standardized development
+!.vscode/settings.json
 
 # Operating System Files
 # ---------------------------
+# macOS system files
 .DS_Store
+# Windows thumbnail cache
 Thumbs.db
 
 # CLI Configuration
 # ---------------------------
+# Terraform CLI configuration files
 .terraformrc
 terraform.rc
 
 # Script and Build Output
 # ---------------------------
+# Ignore script outputs but keep the directory
 scripts/output/*
 !scripts/output/.gitkeep
+# Ignore all log and backup files
 *.log
 *.bak
-EOF
-
-# Verify .gitignore content
-cat .gitignore
