@@ -23,3 +23,8 @@ variable "environment" {
   type        = string
   default     = "Management" # Default environment name is set to 'Management'.
 }
+
+variable "log_analytics_workspace_id" {
+  description = "The ID of the Log Analytics workspace for diagnostic logging"
+  type        = string
+}
