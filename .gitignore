@@ -1,27 +1,24 @@
 # Terraform Infrastructure Files
-# ---------------------------
-# Local .terraform directories that store plugins and modules
 **/.terraform/*
-
-# .tfstate files (contain sensitive infrastructure state)
 *.tfstate
 *.tfstate.*
-
-# Crash log files from Terraform operations
 crash.log
 crash.*.log
 
 # Variable Files
-# ---------------------------
-# Exclude all .tfvars files which might contain sensitive data
 *.tfvars
 *.tfvars.json
-# Allow example variable files for team reference
 !example.tfvars
 
+# Terraform Plan Files
+*.tfplan
+
+# Backup Files
+*.backup
+terraform.tfvars.backup
+backend-config/terraform.tfvars.backup
+
 # Azure Specific Secrets
-# ---------------------------
-# Azure configuration and keys
 **/azurekeys.txt
 **/azure.conf
 **/*connection_string*
@@ -32,8 +29,6 @@ backend.conf
 .azure/
 
 # Security and Secrets
-# ---------------------------
-# General secret files
 **/.secrets/*
 **/secrets/*
 *.key
@@ -45,43 +40,38 @@ backend.conf
 **/*.secret
 
 # Environment Files
-# ---------------------------
-# Ignore all environment files except examples
 .env
 .env.*
 !.env.example
 
 # IDE and Editor Files
-# ---------------------------
-# VS Code - ignore everything in .vscode except specific files
 .vscode/*
-# Track extension recommendations for team consistency
 !.vscode/extensions.json
-# Track actual settings for standardized development
 !.vscode/settings.json
 
 # Operating System Files
-# ---------------------------
-# macOS system files
 .DS_Store
-# Windows thumbnail cache
 Thumbs.db
 
 # CLI Configuration
-# ---------------------------
-# Terraform CLI configuration files
 .terraformrc
 terraform.rc
 
 # Script and Build Output
-# ---------------------------
-# Ignore script outputs but keep the directory
 scripts/output/*
 !scripts/output/.gitkeep
-# Ignore all log and backup files
 *.log
+*.error.log
 *.bak
+
+# Generated Files
+*.out
+*.exe
+*.class
+*.pyc
+*.o
 
 # Backend-specific VS Code settings
 backend-config/.vscode/settings.json
 backend-config/.vscode/tasks.json
+backend-config/terraform.tfvars.backup
