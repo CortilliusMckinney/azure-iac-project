@@ -1,14 +1,15 @@
 {
-    "files.exclude": {
-        "**/.git": true,
-        "**/.DS_Store": true,
-        "**/node_modules": true,
-        "**/.terraform/*": true,   // Hide Terraform cache files
-        "*.tfstate": true,         // Hide state files
-        "*.tfstate.*": true        // Hide state backups
-    },
-    "editor.formatOnSave": true,  // Ensure consistent formatting
-    "[terraform]": {
-        "editor.defaultFormatter": "hashicorp.terraform" // Use HashiCorp Terraform formatter
-    }
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true,
+    "**/.terraform/*": true, // Hide Terraform cache files
+    "*.tfstate": true, // Hide state files
+    "*.tfstate.*": true // Hide state backups
+  },
+  "editor.formatOnSave": true, // Ensure consistent formatting
+  "[terraform]": {
+    "editor.defaultFormatter": "hashicorp.terraform" // Use HashiCorp Terraform formatter
+  },
+  "java.project.explorer.showNonJavaResources": true
 }
