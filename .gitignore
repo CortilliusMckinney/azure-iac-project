@@ -76,3 +76,4 @@ scripts/output/*
 backend-config/.vscode/settings.json
 backend-config/.vscode/tasks.json
 backend-config/terraform.tfvars.backup
+.temp_changes
