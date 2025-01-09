@@ -39,6 +39,4 @@ All notable changes to this project will be documented in this file following th
   - Set up environment separation
   - Implemented security-focused .gitignore
   - Added initial documentation
-exit
-
-
+    exit
