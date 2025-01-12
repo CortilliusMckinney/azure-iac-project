@@ -1,0 +1,30 @@
+# tests/requirements.txt
+
+# Core Testing Framework
+pytest==7.4.0          # For running our tests - this is essential and you already have it
+
+# Terraform Interaction
+python-terraform==0.10.1    # For interacting with Terraform - good that you have this
+
+# Azure SDK Components
+azure-mgmt-resource==21.1.0  # For working with Azure resources in general
+azure-mgmt-compute>=28.0.0   # For managing Azure compute resources like VMs
+azure-mgmt-network>=21.0.1   # For working with Azure networking components
+azure-mgmt-storage>=20.1.0   # For managing Azure storage resources
+azure-identity>=1.12.0       # For handling Azure authentication
+
+# Environment and Configuration
+python-dotenv==1.0.0        # For managing environment variables - you've got this covered
+
+# Additional Testing Tools
+pytest-cov>=4.1.0           # For measuring test coverage
+pytest-asyncio>=0.21.1      # For testing asynchronous operations
+
+# Monitoring and Logging
+opencensus-ext-azure>=1.1.9      # For Azure monitoring integration
+applicationinsights>=0.11.10      # For collecting testing telemetry
+
+# Utility Packages
+typing-extensions>=4.5.0     # For enhanced type hinting
+pyyaml>=6.0.1               # For parsing YAML configurations
+requests>=2.28.2            # For making HTTP requests
