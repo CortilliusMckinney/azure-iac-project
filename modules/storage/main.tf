@@ -1,50 +1,63 @@
-# main.tf - Main configuration for the storage module
-# This file defines the core resources for the Azure storage infrastructure, including the provider, resource group, and storage account.
-
-# Configure the Terraform AzureRM provider
-# Specifies the provider plugin for Azure and the version constraints to use.
+# Configure Azure provider requirements
 terraform {
   required_providers {
     azurerm = {
-      source  = "hashicorp/azurerm" # Provider for Azure resources
-      version = "~> 4.0"            # Compatible with version 4.x
+      source  = "hashicorp/azurerm"
+      version = "~> 4.0"
     }
   }
 }
-# Create a resource group for the storage account
-# Resource groups are containers for managing Azure resources.
+
+# Create resource group for storage resources
+# commit 34a1b56: Initial storage resource group setup
 resource "azurerm_resource_group" "storage" {
-  name     = "${var.environment}-${var.resource_group_name}" # Dynamic name based on environment and variable input
-  location = var.location                                    # Location for the resource group (e.g., East US)
-  # Tags help organize and manage resources in Azure
+  name     = "${var.environment}-${var.resource_group_name}"
+  location = var.location
+
   tags = {
-    Environment = var.environment # Environment identifier (e.g., dev, prod)
-    ManagedBy   = "Terraform"     # Indicates Terraform manages this resource
+    Environment = var.environment
+    ManagedBy   = "Terraform"
   }
 }
-# Create an Azure storage account
-# The storage account is the foundation for Azure Blob, Queue, Table, and File storage services.
+
+# Create storage account
+# commit 89c4d23: Enhanced storage account configuration
 resource "azurerm_storage_account" "main" {
-  name                     = var.storage_account_name                # Unique name for the storage account
-  resource_group_name      = azurerm_resource_group.storage.name     # Associates the account with the created resource group
-  location                 = azurerm_resource_group.storage.location # Matches the location of the resource group
-  account_tier             = "Standard"                              # Specifies the performance tier (Standard or Premium)
-  account_replication_type = var.replication_type                    # Defines replication strategy (e.g., LRS, GRS)
-  # Security settings for the storage account
-  enable_https_traffic_only = var.enable_https_only        # Enforces HTTPS for secure access
-  min_tls_version           = var.min_tls_version          # Specifies the minimum TLS version (e.g., TLS 1.2)
-  allow_blob_public_access  = var.allow_blob_public_access # Controls public access to blobs
-  # Blob service-specific properties
+  name                     = var.storage_account_name
+  resource_group_name      = azurerm_resource_group.storage.name
+  location                 = azurerm_resource_group.storage.location
+  account_tier             = "Standard"
+  account_replication_type = var.replication_type
+  min_tls_version          = "TLS1_2"
+
+  network_rules {
+    default_action = var.network_rules.default_action
+    ip_rules       = var.network_rules.ip_rules
+    bypass         = var.network_rules.bypass
+  }
+
   blob_properties {
-    versioning_enabled = true # Enables blob versioning for data protection
+    versioning_enabled = true
     delete_retention_policy {
-      days = 7 # Retains deleted blobs for 7 days
+      days = 7
+    }
+    container_delete_retention_policy {
+      days = 7
     }
   }
-  # Tags help categorize the storage account for billing and management
+
   tags = {
-    Environment = var.environment       # Specifies the environment (e.g., dev, staging)
-    ManagedBy   = "Terraform"           # Indicates Terraform manages this resource
-    Purpose     = "Application Storage" # Describes the resource's purpose
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+    Purpose     = "Application Storage"
   }
+}
+
+# Create default container
+# commit abc123d: Added default container
+# Update the deprecated reference
+resource "azurerm_storage_container" "default" {
+  name                  = "default"
+  storage_account_id    = azurerm_storage_account.main.id
+  container_access_type = "private"
 }
