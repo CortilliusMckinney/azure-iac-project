@@ -1,16 +1,19 @@
-# Configure Azure provider requirements
-terraform {
-  required_providers {
-    azurerm = {
-      source  = "hashicorp/azurerm"
-      version = "~> 3.0"
-    }
-  }
-}
+# # Configure Azure provider requirements
+# terraform {
+#   required_providers {
+#     azurerm = {
+#       source  = "hashicorp/azurerm"
+#       version = "~> 4.0"
+#     }
+#   }
+# }
+# provider "azurerm" {
+#   features {}
+# }
 
 # Create resource group for compute resources
 resource "azurerm_resource_group" "compute" {
-  name     = "${var.environment}-${var.resource_group_name}"
+  name     = "${var.environment}-${var.resource_group_name}-compute"
   location = var.location
 
   tags = {
