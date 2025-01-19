@@ -23,13 +23,6 @@ output "container_name" {
   description = "The blob container name for state files"
 }
 
-# Environment Configuration Output
-# This output provides the environment-specific configuration.
-output "environment_config" {
-  value       = var.environment_config
-  description = "Environment-specific resource configurations"
-}
-
 # Common Output Tags
 # These tags are applied to all backend state resources for consistent resource tracking.
 output "tags" {
