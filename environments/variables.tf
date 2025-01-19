@@ -21,6 +21,49 @@ variable "location" {
   default     = "eastus" # Default Azure region
 }
 
+# Project Name
+# Specifies the project name for resource naming consistency.
+variable "project_name" {
+  description = "The name of the project, used in resource naming"
+  type        = string
+}
+
+# Azure Subscription ID
+# The Azure subscription ID for deploying resources.
+variable "subscription_id" {
+  description = "Azure subscription ID where resources will be created"
+  type        = string
+}
+
+# Network Configuration
+# The address space for the virtual network.
+variable "address_space" {
+  description = "The address space for the virtual network"
+  type        = list(string)
+}
+
+# Security Configuration
+# List of allowed IP ranges for accessing resources.
+variable "allowed_ip_ranges" {
+  description = "List of IP ranges allowed to access resources"
+  type        = list(string)
+}
+
+# Compute Configuration
+# Virtual machine size for the environment.
+variable "vm_size" {
+  description = "Size of the virtual machine"
+  type        = string
+  default     = "Standard_B2s" # Default for development
+}
+
+# Admin Username
+# The administrator username for virtual machines.
+variable "admin_username" {
+  description = "Administrator username for VMs"
+  type        = string
+}
+
 # Resource Configuration by Environment
 # This variable is a map defining environment-specific resource configurations.
 # Each environment (dev, staging, prod) has tailored settings for:
