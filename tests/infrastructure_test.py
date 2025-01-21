@@ -976,47 +976,83 @@ if __name__ == "__main__":
     import sys
 
     # Create argument parser
-    parser = argparse.ArgumentParser(description='Infrastructure Testing Framework')
-    parser.add_argument('--ci', action='store_true', help='Run in CI mode (non-interactive)')
-    parser.add_argument('--test-type', choices=['modules', 'backend', 'all-env', 'dev', 'staging', 'prod'],
-                      help='Type of test to run in CI mode')
-    parser.add_argument('--output', help='Output file for test results')
+    parser = argparse.ArgumentParser(
+        description="Infrastructure Testing Framework",
+        epilog="""
+        Menu Choices Mapped to --test-type in CI mode:
+          1 -> modules     (Test core modules)
+          2 -> backend     (Test backend config)
+          3 -> all-env     (Test all environments)
+          4 -> dev         (Test single environment: dev)
+          5 -> staging     (Test single environment: staging)
+          6 -> prod        (Test single environment: prod)
+        """
+    )
+    parser.add_argument(
+        "--ci", 
+        action="store_true",
+        help="Run in CI mode (non-interactive). Bypasses the menu."
+    )
+    parser.add_argument(
+        "--test-type",
+        choices=["modules", "backend", "all-env", "dev", "staging", "prod"],
+        help=(
+            "Type of test to run in CI mode:\n"
+            "  modules  -> (Menu #1) Test core modules\n"
+            "  backend  -> (Menu #2) Test backend config\n"
+            "  all-env  -> (Menu #3) Test all environments\n"
+            "  dev      -> (Menu #4) Test dev environment\n"
+            "  staging  -> (Menu #5) Test staging environment\n"
+            "  prod     -> (Menu #6) Test production environment\n"
+        )
+    )
+    parser.add_argument(
+        "--output",
+        help="Output file for test results (JSON). Exported after tests run."
+    )
 
     args = parser.parse_args()
     runner = InfrastructureTestRunner()
 
     try:
         if args.ci:
-            # CI/CD mode
-            if args.test_type == 'modules':
+            # ========== CI/CD mode ==========
+            if args.test_type == "modules":
+                # Menu #1 equivalent
                 runner.test_core_modules()
-            elif args.test_type == 'backend':
+            elif args.test_type == "backend":
+                # Menu #2 equivalent
                 runner.test_backend_config()
-            elif args.test_type == 'all-env':
+            elif args.test_type == "all-env":
+                # Menu #3 equivalent
                 runner.test_environment_configs()
-            elif args.test_type in ['dev', 'staging', 'prod']:
+            elif args.test_type in ["dev", "staging", "prod"]:
+                # Menu #4, 5, 6 equivalents
                 runner.test_single_environment(args.test_type)
             else:
-                # Default to module testing if no type specified
+                # If --ci is specified but no --test-type,
+                # default to test #1 (modules)
                 runner.test_core_modules()
 
             # Export results if output file specified
             if args.output:
                 runner.export_test_report()
-            
-            # Display results
+
+            # Display results at the end
             runner.display_results()
-            
-            # Exit with success/failure based on test results
-            sys.exit(0 if all(result.status for result in runner.test_results) else 1)
+
+            # Exit code: 0 if all tests passed, 1 otherwise
+            sys.exit(0 if all(r.status for r in runner.test_results) else 1)
+
         else:
-            # Interactive mode
+            # ========== Interactive (Menu) mode ==========
             try:
                 runner.display_menu()
             except EOFError:
                 # Handle non-interactive environment gracefully
-                print("\nNon-interactive environment detected. Use --ci flag for CI/CD mode.")
-                print("Example: python infrastructure_test.py --ci --test-type modules")
+                print("\nNon-interactive environment detected.")
+                print("Use --ci flag and --test-type for CI/CD mode, e.g.:")
+                print("  python infrastructure_test.py --ci --test-type modules")
                 sys.exit(1)
             except KeyboardInterrupt:
                 print("\nOperation cancelled by user.")
