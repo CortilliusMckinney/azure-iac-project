@@ -41,8 +41,10 @@ jobs:
       
       - name: Run Infrastructure Tests
         run: |
-          echo "1" | python tests/infrastructure_test.py --environment ${{ github.event_name == 'pull_request' && 'dev' || 'prod' }}
-          
+          # Provide multiple inputs: 1 for initial test, then 9 to exit
+          { echo "1"; sleep 2; echo "9"; } | python tests/infrastructure_test.py --environment ${{ github.event_name == 'pull_request' && 'dev' || 'prod' }}
+
+  
   # commit q4r5s6t: Added manual testing option with extended security checks
   manual_validate:
     name: 'Manual Validation'
