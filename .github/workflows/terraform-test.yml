@@ -9,7 +9,6 @@ on:
   pull_request:
     branches: [ main ]
 
-# commit e4f5g6h: Added environment variables for secure authentication
 env:
   ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
@@ -19,15 +18,13 @@ env:
   TERRAFORM_VERSION: '1.0.11'
 
 jobs:
-  # commit i7j8k9l: Implemented automated testing option with Python framework
   automated_validate:
     name: 'Automated Validation'
     runs-on: ubuntu-latest
-    if: github.event.inputs.testing_mode == 'automated'
+    # Remove the conditional that's causing the skip
     steps:
       - uses: actions/checkout@v2
       
-      # commit m1n2o3p: Added Python setup for testing framework
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
@@ -45,9 +42,7 @@ jobs:
       
       - name: Run Infrastructure Tests
         run: |
-          python tests/infrastructure_test.py --environment ${{ 
-            github.event_name == 'pull_request' && 'dev' || 'prod' 
-          }} --ci
+          python tests/infrastructure_test.py --environment ${{ github.event_name == 'pull_request' && 'dev' || 'prod' }} --ci
 
   # commit q4r5s6t: Added manual testing option with extended security checks
   manual_validate:
