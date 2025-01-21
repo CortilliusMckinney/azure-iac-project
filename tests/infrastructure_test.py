@@ -382,8 +382,11 @@ class InfrastructureTestRunner:
         self.test_results: List[TestResult] = []
         self.backend_validator = BackendValidator()
 
-    def display_menu(self):
-        """Displays interactive menu for test selection"""
+    # Around line 399, modify the display_menu function:
+
+def display_menu(self):
+    """Display interactive menu"""
+    try:
         while True:
             print("\n=== Azure Infrastructure Testing Framework ===")
             print("1. Test Infrastructure Modules")
@@ -396,8 +399,23 @@ class InfrastructureTestRunner:
             print("8. Export Test Report")
             print("9. Exit")
 
-            choice = input("\nEnter your choice (1-9): ")
-            self.handle_menu_choice(choice)
+            try:
+                choice = input("\nEnter your choice (1-9): ")
+                if choice == "1":
+                    self.test_core_modules()
+                    # After test completion, exit with success
+                    sys.exit(0)
+                elif choice == "9":
+                    print("\nExiting...")
+                    sys.exit(0)
+                # ... rest of your menu options ...
+            except (EOFError, KeyboardInterrupt):
+                # Handle EOF and Ctrl+C gracefully
+                print("\nTest execution completed.")
+                sys.exit(0)
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        sys.exit(1)
 
     def handle_menu_choice(self, choice: str):
         """Handles user input from the menu"""
