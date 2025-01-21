@@ -972,5 +972,57 @@ class ProductionValidator(EnvironmentValidator):
         return results
 
 if __name__ == "__main__":
+    import argparse
+    import sys
+
+    # Create argument parser
+    parser = argparse.ArgumentParser(description='Infrastructure Testing Framework')
+    parser.add_argument('--ci', action='store_true', help='Run in CI mode (non-interactive)')
+    parser.add_argument('--test-type', choices=['modules', 'backend', 'all-env', 'dev', 'staging', 'prod'],
+                      help='Type of test to run in CI mode')
+    parser.add_argument('--output', help='Output file for test results')
+
+    args = parser.parse_args()
     runner = InfrastructureTestRunner()
-    runner.display_menu()
+
+    try:
+        if args.ci:
+            # CI/CD mode
+            if args.test_type == 'modules':
+                runner.test_core_modules()
+            elif args.test_type == 'backend':
+                runner.test_backend_config()
+            elif args.test_type == 'all-env':
+                runner.test_environment_configs()
+            elif args.test_type in ['dev', 'staging', 'prod']:
+                runner.test_single_environment(args.test_type)
+            else:
+                # Default to module testing if no type specified
+                runner.test_core_modules()
+
+            # Export results if output file specified
+            if args.output:
+                runner.export_test_report()
+            
+            # Display results
+            runner.display_results()
+            
+            # Exit with success/failure based on test results
+            sys.exit(0 if all(result.status for result in runner.test_results) else 1)
+        else:
+            # Interactive mode
+            try:
+                runner.display_menu()
+            except EOFError:
+                # Handle non-interactive environment gracefully
+                print("\nNon-interactive environment detected. Use --ci flag for CI/CD mode.")
+                print("Example: python infrastructure_test.py --ci --test-type modules")
+                sys.exit(1)
+            except KeyboardInterrupt:
+                print("\nOperation cancelled by user.")
+                sys.exit(0)
+
+    except Exception as e:
+        logging.error(f"Error running tests: {str(e)}")
+        print(f"\nError: {str(e)}")
+        sys.exit(1)

@@ -64,7 +64,7 @@ jobs:
           pip install -r tests/requirements.txt
 
       - name: Run Infrastructure Tests
-        run: python tests/infrastructure_test.py
+        run: python tests/infrastructure_test.py --ci --test-type modules --output test_results.json
 
   deploy:
     name: "Deploy Infrastructure"
