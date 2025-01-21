@@ -21,7 +21,6 @@ jobs:
   automated_validate:
     name: 'Automated Validation'
     runs-on: ubuntu-latest
-    # Remove the conditional that's causing the skip
     steps:
       - uses: actions/checkout@v2
       
@@ -42,8 +41,8 @@ jobs:
       
       - name: Run Infrastructure Tests
         run: |
-          python tests/infrastructure_test.py --environment ${{ github.event_name == 'pull_request' && 'dev' || 'prod' }} --ci
-
+          echo "1" | python tests/infrastructure_test.py --environment ${{ github.event_name == 'pull_request' && 'dev' || 'prod' }}
+          
   # commit q4r5s6t: Added manual testing option with extended security checks
   manual_validate:
     name: 'Manual Validation'
