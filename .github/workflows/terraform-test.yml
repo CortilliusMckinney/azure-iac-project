@@ -43,20 +43,30 @@ jobs:
           fi
           cd environments/staging
           
-          echo "Checking for terraform.tfvars..."
-          ls -la
+          echo "Creating terraform.tfvars..."
+          cat > terraform.tfvars <<EOF
+          environment       = "staging"
+          location         = "eastus"
+          project_name     = "azure-iac-test"
+          subscription_id  = "$ARM_SUBSCRIPTION_ID"
+          address_space    = ["10.0.0.0/16"]
+          allowed_ip_ranges = [
+            "184.89.240.160/30",
+            "20.37.158.0/23",
+            "20.37.194.0/24",
+            "20.38.34.0/23"
+          ]
+          admin_username   = "azureuser"
+          tenant_id       = "$ARM_TENANT_ID"
+          client_id       = "$ARM_CLIENT_ID"
+          client_secret   = "$ARM_CLIENT_SECRET"
+          EOF
           
-          # Create temporary backend config for testing
+          # Create temporary backend config
           cat > backend_override.tf <<EOF
           terraform {
             backend "local" {}
           }
-          EOF
-          
-          # Create test terraform.tfvars if it doesn't exist
-          cat > terraform.tfvars <<EOF
-          environment = "staging"
-          location = "eastus"
           EOF
           
           echo "Running Terraform Init..."
