@@ -29,6 +29,15 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Debug Subscription ID
+        run: |
+          echo "Subscription ID: ${secrets.AZURE_SUBSCRIPTION_ID}"
+
+      - name: Set Azure Subscription
+        run: |
+          echo "Setting Azure Subscription..."
+          az account set --subscription="${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -62,6 +71,15 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Debug Subscription ID
+        run: |
+          echo "Subscription ID: ${secrets.AZURE_SUBSCRIPTION_ID}"
+
+      - name: Set Azure Subscription
+        run: |
+          echo "Setting Azure Subscription..."
+          az account set --subscription="${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -78,45 +96,86 @@ jobs:
           pip install -r tests/requirements.txt
           pip install azure-cli
 
-      - name: Verify Azure Login
+      - name: Test Core Modules
         run: |
-          echo "Current Azure Account:"
-          az account show
-          echo "Setting Azure Subscription..."
-          az account set --subscription="${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+          python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json
 
-      - name: Inject Sensitive Variables into terraform.tfvars
+      - name: Test Backend
         run: |
-          echo "tenant_id     = \"${{ secrets.AZURE_TENANT_ID }}\"" >> environments/staging/terraform.tfvars
-          echo "client_id     = \"${{ secrets.AZURE_CLIENT_ID }}\"" >> environments/staging/terraform.tfvars
-          echo "client_secret = \"${{ secrets.AZURE_CLIENT_SECRET }}\"" >> environments/staging/terraform.tfvars
-          echo "subscription_id = \"${{ secrets.AZURE_SUBSCRIPTION_ID }}\"" >> environments/staging/terraform.tfvars
+          python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json
 
-      - name: Test Environments
+      - name: Test All Environments
         run: |
-          for env in dev staging prod; do
-            echo "=== Testing $env Environment ==="
-            if [ ! -d "environments/$env" ]; then
-              echo "$env environment directory not found. Skipping..."
-              continue
-            fi
-            cd environments/$env
-            terraform init -no-color -backend=false > init.log 2>&1 || {
-              cat init.log
-              exit 1
-            }
-            terraform validate -no-color > validate.log 2>&1 || {
-              cat validate.log
-              exit 1
-            }
-            terraform plan -no-color -input=false -var="environment=$env" > plan.log 2>&1 || {
-              echo "=== Plan Failed for $env ==="
-              TF_LOG=DEBUG terraform plan -no-color -input=false -var="environment=$env" > debug.log 2>&1
-              cat debug.log
-              exit 1
-            }
-            cd - > /dev/null
-          done
+          python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json
+
+      - name: Test Dev Environment
+        run: |
+          echo "=== Testing Dev Environment ==="
+          if [ ! -d "environments/dev" ]; then
+            echo "Dev environment directory not found. Skipping..."
+            exit 0
+          fi
+          cd environments/dev
+          terraform init -no-color -backend=false > dev_init.log 2>&1 || {
+            cat dev_init.log
+            exit 1
+          }
+          terraform validate -no-color > dev_validate.log 2>&1 || {
+            cat dev_validate.log
+            exit 1
+          }
+          terraform plan -no-color -input=false -var='environment=dev' > dev_plan.log 2>&1 || {
+            echo "=== Plan Failed ==="
+            TF_LOG=DEBUG terraform plan -no-color -input=false -var='environment=dev' > dev_debug.log 2>&1
+            cat dev_debug.log
+            exit 1
+          }
+
+      - name: Test Staging Environment
+        run: |
+          echo "=== Testing Staging Environment ==="
+          if [ ! -d "environments/staging" ]; then
+            echo "Staging environment directory not found. Skipping..."
+            exit 0
+          fi
+          cd environments/staging
+          terraform init -no-color -backend=false > staging_init.log 2>&1 || {
+            cat staging_init.log
+            exit 1
+          }
+          terraform validate -no-color > staging_validate.log 2>&1 || {
+            cat staging_validate.log
+            exit 1
+          }
+          terraform plan -no-color -input=false -var='environment=staging' > staging_plan.log 2>&1 || {
+            echo "=== Plan Failed ==="
+            TF_LOG=DEBUG terraform plan -no-color -input=false -var='environment=staging' > staging_debug.log 2>&1
+            cat staging_debug.log
+            exit 1
+          }
+
+      - name: Test Production Environment
+        run: |
+          echo "=== Testing Production Environment ==="
+          if [ ! -d "environments/prod" ]; then
+            echo "Production environment directory not found. Skipping..."
+            exit 0
+          fi
+          cd environments/prod
+          terraform init -no-color -backend=false > prod_init.log 2>&1 || {
+            cat prod_init.log
+            exit 1
+          }
+          terraform validate -no-color > prod_validate.log 2>&1 || {
+            cat prod_validate.log
+            exit 1
+          }
+          terraform plan -no-color -input=false -var='environment=prod' > prod_plan.log 2>&1 || {
+            echo "=== Plan Failed ==="
+            TF_LOG=DEBUG terraform plan -no-color -input=false -var='environment=prod' > prod_debug.log 2>&1
+            cat prod_debug.log
+            exit 1
+          }
 
       - name: Upload Test Logs
         if: failure()
