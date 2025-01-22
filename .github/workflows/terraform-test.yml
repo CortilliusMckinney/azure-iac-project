@@ -154,62 +154,90 @@ jobs:
           rm -f backend_override.tf terraform.tfvars
           cd ..
 
-      - name: Test Staging Environment
-        run: |
-          echo "=== Testing Staging Environment ==="
-          if [ ! -d "environments/staging" ]; then
-            echo "Staging environment directory not found. Skipping..."
-            exit 0
-          fi
-          cd environments/staging
-          
-          # Remove any existing override files
-          rm -f backend_override.tf terraform.tfvars
-          
-          echo "Creating terraform.tfvars..."
-          cat > terraform.tfvars <<EOF
-          environment       = "staging"
-          location         = "eastus"
-          project_name     = "azure-iac-test"
-          subscription_id  = "$ARM_SUBSCRIPTION_ID"
-          address_space    = ["10.0.0.0/16"]
-          allowed_ip_ranges = [
-            "184.89.240.160/30",
-            "20.37.158.0/23",
-            "20.37.194.0/24",
-            "20.38.34.0/23"
-          ]
-          admin_username   = "azureuser"
-          tenant_id       = "$ARM_TENANT_ID"
-          client_id       = "$ARM_CLIENT_ID"
-          client_secret   = "$ARM_CLIENT_SECRET"
-          EOF
-          
-          cat > backend_override.tf <<EOF
-          terraform {
-            backend "local" {}
-          }
-          EOF
-          
-          echo "Running Terraform Init..."
-          terraform init -no-color > staging_init.log 2>&1 || { cat staging_init.log; exit 1; }
-
-          echo "Running Terraform Validate..."
-          terraform validate -no-color > staging_validate.log 2>&1 || { cat staging_validate.log; exit 1; }
-
-          echo "Running Terraform Plan..."
-          terraform plan -no-color -input=false > staging_plan.log 2>&1 || {
-            echo "=== Plan Failed ==="
-            echo "Debugging Output:"
-            cat staging_plan.log
-            TF_LOG=DEBUG terraform plan -no-color -input=false > staging_debug.log 2>&1
-            cat staging_debug.log
-            exit 1
-          }
-          
-          # Clean up
-          rm -f backend_override.tf terraform.tfvars
-          cd ..
+          - name: Test Staging Environment
+          run: |
+            echo "=== Testing Staging Environment ==="
+            if [ ! -d "environments/staging" ]; then
+              echo "Staging environment directory not found. Skipping..."
+              exit 0
+            fi
+            
+            # Debug: Show current directory and contents
+            pwd
+            ls -la
+            
+            cd environments/staging
+            echo "Entered staging directory:"
+            pwd
+            ls -la
+            
+            # Remove any existing override files
+            rm -f backend_override.tf terraform.tfvars
+            
+            echo "Creating terraform.tfvars..."
+            cat > terraform.tfvars <<EOF
+            environment       = "staging"
+            location         = "eastus"
+            project_name     = "azure-iac-test"
+            subscription_id  = "$ARM_SUBSCRIPTION_ID"
+            address_space    = ["10.0.0.0/16"]
+            allowed_ip_ranges = [
+              "184.89.240.160/30",
+              "20.37.158.0/23",
+              "20.37.194.0/24",
+              "20.38.34.0/23"
+            ]
+            admin_username   = "azureuser"
+            tenant_id       = "$ARM_TENANT_ID"
+            client_id       = "$ARM_CLIENT_ID"
+            client_secret   = "$ARM_CLIENT_SECRET"
+            EOF
+            
+            echo "Verifying terraform.tfvars content:"
+            cat terraform.tfvars | grep -v "client_secret"
+            
+            cat > backend_override.tf <<EOF
+            terraform {
+              backend "local" {}
+            }
+            EOF
+            
+            echo "Running Terraform Init..."
+            terraform init -no-color > staging_init.log 2>&1 || { 
+              echo "Init failed:"
+              cat staging_init.log
+              exit 1
+            }
+  
+            echo "Running Terraform Validate..."
+            terraform validate -no-color > staging_validate.log 2>&1 || { 
+              echo "Validate failed:"
+              cat staging_validate.log
+              exit 1
+            }
+  
+            echo "Running Terraform Plan..."
+            # Run plan with explicit output of all steps
+            terraform plan -no-color -input=false -detailed-exitcode || {
+              ret=$?
+              echo "Plan exit code: $ret"
+              echo "=== Plan Failed ==="
+              echo "Environment variables:"
+              env | grep -v "SECRET\|TOKEN\|KEY\|PASSWORD"
+              echo "File list:"
+              ls -la
+              echo "Current working directory:"
+              pwd
+              echo "Terraform files:"
+              cat *.tf
+              echo "Plan output:"
+              terraform plan -no-color -input=false
+              exit 1
+            }
+            
+            # Clean up
+            rm -f backend_override.tf terraform.tfvars
+            cd ..
 
       - name: Test Production Environment
         run: |
