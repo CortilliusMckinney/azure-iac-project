@@ -2,9 +2,11 @@ name: "Terraform Tests"
 
 on:
   pull_request:
-    branches: [main]
+    branches:
+      - main
   push:
-    branches: [main]
+    branches:
+      - main
 
 env:
   ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -19,6 +21,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: Azure CLI Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -63,35 +70,30 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r tests/requirements.txt
 
-      # --- Test #1: Core Modules ---
       - name: Test Core Modules
-        run: |
-          python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json
+        run: python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json
 
-      # --- Test #2: Backend Config ---
       - name: Test Backend
-        run: |
-          python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json
+        run: python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json
 
-      # --- Test #3: All Environments ---
       - name: Test All Environments
-        run: |
-          python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json
+        run: python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json
 
-      # --- Test #4: Dev Environment ---
       - name: Test Dev
-        run: |
-          python tests/infrastructure_test.py --ci --test-type dev --output test_results_dev.json
+        run: python tests/infrastructure_test.py --ci --test-type dev --output test_results_dev.json
 
-      # --- Test #5: Staging Environment ---
       - name: Test Staging
-        run: |
-          python tests/infrastructure_test.py --ci --test-type staging --output test_results_staging.json
+        run: python tests/infrastructure_test.py --ci --test-type staging --output test_results_staging.json
 
-      # --- Test #6: Production Environment ---
       - name: Test Production
-        run: |
-          python tests/infrastructure_test.py --ci --test-type prod --output test_results_prod.json
+        run: python tests/infrastructure_test.py --ci --test-type prod --output test_results_prod.json
+
+      - name: Upload Test Logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-logs
+          path: logs/
 
   deploy:
     name: "Deploy Infrastructure"
