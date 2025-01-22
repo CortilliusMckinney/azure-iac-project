@@ -21,7 +21,6 @@ jobs:
     name: "Run Tests"
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
-
     steps:
       - uses: actions/checkout@v3
 
@@ -44,11 +43,20 @@ jobs:
           fi
           cd environments/staging
           
+          echo "Checking for terraform.tfvars..."
+          ls -la
+          
           # Create temporary backend config for testing
           cat > backend_override.tf <<EOF
           terraform {
             backend "local" {}
           }
+          EOF
+          
+          # Create test terraform.tfvars if it doesn't exist
+          cat > terraform.tfvars <<EOF
+          environment = "staging"
+          location = "eastus"
           EOF
           
           echo "Running Terraform Init..."
@@ -58,17 +66,17 @@ jobs:
           terraform validate -no-color > staging_validate.log 2>&1 || { cat staging_validate.log; exit 1; }
 
           echo "Running Terraform Plan..."
-          terraform plan -no-color -input=false -var-file=terraform.tfvars > staging_plan.log 2>&1 || {
+          terraform plan -no-color -input=false > staging_plan.log 2>&1 || {
             echo "=== Plan Failed ==="
             echo "Debugging Output:"
             cat staging_plan.log
-            TF_LOG=DEBUG terraform plan -no-color -input=false -var-file=terraform.tfvars > staging_debug.log 2>&1
+            TF_LOG=DEBUG terraform plan -no-color -input=false > staging_debug.log 2>&1
             cat staging_debug.log
             exit 1
           }
           
-          # Clean up temporary backend config
-          rm backend_override.tf
+          # Clean up temporary files
+          rm backend_override.tf terraform.tfvars
 
       - name: Upload Test Results
         if: failure()
