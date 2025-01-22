@@ -76,10 +76,13 @@ jobs:
           pip install -r tests/requirements.txt
           pip install azure-cli
 
-      - name: Verify Azure CLI Authentication
+      - name: Verify Azure Login
         run: |
+          echo "Current Azure Account:"
           az account show
-          az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          echo "Setting Azure Subscription..."
+          az account set --subscription="${{ secrets.AZURE_SUBSCRIPTION_ID }}"
+          echo "Verification Complete"
 
       - name: Test Core Modules
         run: python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json
