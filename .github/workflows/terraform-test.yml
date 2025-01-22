@@ -105,11 +105,18 @@ jobs:
             exit 0
           fi
           cd environments/dev
-          terraform init -no-color -backend=false
-          terraform validate -no-color
-          terraform plan -no-color -input=false -var='environment=dev' || {
+          terraform init -no-color -backend=false > dev_init.log 2>&1 || {
+            cat dev_init.log
+            exit 1
+          }
+          terraform validate -no-color > dev_validate.log 2>&1 || {
+            cat dev_validate.log
+            exit 1
+          }
+          terraform plan -no-color -input=false -var='environment=dev' > dev_plan.log 2>&1 || {
             echo "=== Plan Failed ==="
-            TF_LOG=DEBUG terraform plan -no-color -input=false -var='environment=dev'
+            TF_LOG=DEBUG terraform plan -no-color -input=false -var='environment=dev' > dev_debug.log 2>&1
+            cat dev_debug.log
             exit 1
           }
 
@@ -121,11 +128,18 @@ jobs:
             exit 0
           fi
           cd environments/staging
-          terraform init -no-color -backend=false
-          terraform validate -no-color
-          terraform plan -no-color -input=false -var='environment=staging' || {
+          terraform init -no-color -backend=false > staging_init.log 2>&1 || {
+            cat staging_init.log
+            exit 1
+          }
+          terraform validate -no-color > staging_validate.log 2>&1 || {
+            cat staging_validate.log
+            exit 1
+          }
+          terraform plan -no-color -input=false -var='environment=staging' > staging_plan.log 2>&1 || {
             echo "=== Plan Failed ==="
-            TF_LOG=DEBUG terraform plan -no-color -input=false -var='environment=staging'
+            TF_LOG=DEBUG terraform plan -no-color -input=false -var='environment=staging' > staging_debug.log 2>&1
+            cat staging_debug.log
             exit 1
           }
 
@@ -137,22 +151,30 @@ jobs:
             exit 0
           fi
           cd environments/prod
-          terraform init -no-color -backend=false
-          terraform validate -no-color
-          terraform plan -no-color -input=false -var='environment=prod' || {
+          terraform init -no-color -backend=false > prod_init.log 2>&1 || {
+            cat prod_init.log
+            exit 1
+          }
+          terraform validate -no-color > prod_validate.log 2>&1 || {
+            cat prod_validate.log
+            exit 1
+          }
+          terraform plan -no-color -input=false -var='environment=prod' > prod_plan.log 2>&1 || {
             echo "=== Plan Failed ==="
-            TF_LOG=DEBUG terraform plan -no-color -input=false -var='environment=prod'
+            TF_LOG=DEBUG terraform plan -no-color -input=false -var='environment=prod' > prod_debug.log 2>&1
+            cat prod_debug.log
             exit 1
           }
 
-      - name: Upload Test Results
+      - name: Upload Test Logs
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: failed-test-results
+          name: failed-test-logs
           path: |
-            **/test_results_*.json
-            logs/**/*.log
+            environments/dev/*.log
+            environments/staging/*.log
+            environments/prod/*.log
 
   deploy:
     name: "Deploy Infrastructure"
