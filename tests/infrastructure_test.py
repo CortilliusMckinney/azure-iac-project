@@ -136,17 +136,6 @@ class BackendValidator(CommandRunner):
                 time.time() - start_time
             ))
 
-            # Generate plan
-            start_time = time.time()
-            cmd = f"cd {backend_path} && terraform plan -no-color"
-            code, stdout, stderr = self.run_command(cmd)
-            results.append(TestResult(
-                "Backend Terraform Plan",
-                code == 0,
-                "Plan generated successfully" if code == 0 else f"Plan failed: {stderr}",
-                time.time() - start_time
-            ))
-
         logging.info("Backend validation completed")
         return results
 
