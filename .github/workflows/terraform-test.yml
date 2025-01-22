@@ -30,8 +30,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Debug Subscription ID
-        run: |
-          echo "Subscription ID: ${secrets.AZURE_SUBSCRIPTION_ID}"
+        run: echo "Subscription ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
       - name: Set Azure Subscription
         run: |
@@ -72,8 +71,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Debug Subscription ID
-        run: |
-          echo "Subscription ID: ${secrets.AZURE_SUBSCRIPTION_ID}"
+        run: echo "Subscription ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}"
 
       - name: Set Azure Subscription
         run: |
