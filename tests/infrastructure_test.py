@@ -20,7 +20,26 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
-
+class CommandRunner:
+    """Base class providing command execution functionality"""
+    
+    @staticmethod
+    def run_command(command: str) -> tuple[int, str, str]:
+        """Execute shell command and return results"""
+        try:
+            process = subprocess.Popen(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                shell=True,
+                text=True
+            )
+            stdout, stderr = process.communicate()
+            return process.returncode, stdout, stderr
+        except Exception as e:
+            logging.error(f"Command execution failed: {e}")
+            return 1, "", str(e)
+        
 """
 Commit: Test Result Management System
 Added TestResult class to standardize test outputs and provide consistent
@@ -48,7 +67,7 @@ Commit: Backend Validation Implementation
 Created dedicated backend validator to ensure proper Azure storage 
 configuration for Terraform state management.
 """
-class BackendValidator:
+class BackendValidator(CommandRunner):
     """Validates Terraform backend infrastructure in Azure"""
     def __init__(self):
         self.resource_group = "terraform-state-rg"
@@ -56,21 +75,21 @@ class BackendValidator:
         self.container_name = "tfstate"
         self.location = "eastus"
 
-    def run_command(self, command: str) -> tuple[int, str, str]:
-        """Executes Azure CLI commands with proper authentication"""
-        try:
-            process = subprocess.Popen(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=True,
-                text=True
-            )
-            stdout, stderr = process.communicate()
-            return process.returncode, stdout, stderr
-        except Exception as e:
-            logging.error(f"Command execution failed: {e}")
-            return 1, "", str(e)
+    # def run_command(self, command: str) -> tuple[int, str, str]:
+    #     ""Executes Azure CLI commands with proper authentication""
+    #     try:
+    #         process = subprocess.Popen(
+    #             command,
+    #             stdout=subprocess.PIPE,
+    #             stderr=subprocess.PIPE,
+    #             shell=True,
+    #             text=True
+    #         )
+    #         stdout, stderr = process.communicate()
+    #         return process.returncode, stdout, stderr
+    #     except Exception as e:
+    #         logging.error(f"Command execution failed: {e}")
+    #         return 1, "", str(e)
 
     def validate_backend(self) -> List[TestResult]:
         """Validates and ensures backend infrastructure exists"""
@@ -239,27 +258,27 @@ class BackendValidator:
             time.time() - start_time
         )
         
-class ModuleTester:
+class ModuleTester(CommandRunner):
     """Tests Terraform modules"""
     def __init__(self):
         self.test_results = []
         self.logger = logging.getLogger('ModuleTester')
         self.logger.setLevel(logging.DEBUG)
 
-    def run_command(self, command: str) -> tuple[int, str, str]:
-        """Execute a shell command and return the results"""
-        try:
-            process = subprocess.Popen(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=True,
-                text=True
-            )
-            stdout, stderr = process.communicate()
-            return process.returncode, stdout, stderr
-        except Exception as e:
-            return 1, "", str(e)
+# """     """ def run_command(self, command: str) -> tuple[int, str, str]:
+#         ""Execute a shell command and return the results""
+#         try:
+#             process = subprocess.Popen(
+#                 command,
+#                 stdout=subprocess.PIPE,
+#                 stderr=subprocess.PIPE,
+#                 shell=True,
+#                 text=True
+#             )
+#             stdout, stderr = process.communicate()
+#             return process.returncode, stdout, stderr
+#         except Exception as e:
+#             return 1, "", str(e) """ """
 
     def test_module(self, module_path: str, module_name: str) -> List[TestResult]:
         """Test a single Terraform module"""
@@ -375,97 +394,35 @@ class ModuleTester:
             )]
         
 
-class InfrastructureTestRunner:
+class InfrastructureTestRunner(CommandRunner):
     """Main test orchestrator for infrastructure testing"""
 
     def __init__(self):
         self.test_results: List[TestResult] = []
         self.backend_validator = BackendValidator()
+        self.module_tester = ModuleTester()
 
-    def display_menu(self):
-        """Displays interactive menu for test selection"""
-        while True:
-            print("\n=== Azure Infrastructure Testing Framework ===")
-            print("1. Test Infrastructure Modules")
-            print("2. Test Backend Configuration")
-            print("3. Test All Environments")
-            print("4. Test Development Environment")
-            print("5. Test Staging Environment")
-            print("6. Test Production Environment")
-            print("7. View Test Results")
-            print("8. Export Test Report")
-            print("9. Exit")
-
-            choice = input("\nEnter your choice (1-9): ")
-            self.handle_menu_choice(choice)
-
-    def handle_menu_choice(self, choice: str):
-        """Handles user input from the menu"""
-        try:
-            if choice == "1":
-                self.test_core_modules()
-            elif choice == "2":
-                print("\nTesting backend configuration...")
-                results = self.backend_validator.validate_backend()
-                self.test_results.extend(results)
-                print("Backend tests completed.")
-            elif choice == "3":
-                self.test_environment_configs()
-            elif choice == "4":
-                self.test_single_environment("dev")
-            elif choice == "5":
-                self.test_single_environment("staging")
-            elif choice == "6":
-                self.test_single_environment("prod")
-            elif choice == "7":
-                self.display_results()
-            elif choice == "8":
-                self.export_test_report()
-            elif choice == "9":
-                print("\nExiting...")
-                sys.exit(0)
-            else:
-                print("\nInvalid choice. Please try again.")
-        except Exception as e:
-            logging.error(f"Error in menu choice: {e}", exc_info=True)
-            print(f"Error: {str(e)}")
-
-    def test_core_modules(self):
-        """Test core infrastructure modules"""
-        logging.info("Starting core module tests")
-        print("\nTesting Core Infrastructure Modules...")
-        
-        try:
-            # Create ModuleTester instance
-            module_tester = ModuleTester()
-            
-            # Run tests on all modules
-            results = module_tester.test_all_modules()
-            
-            # Add results to main test results
-            self.test_results.extend(results)
-            
-            # Print summary
-            total_tests = len(results)
-            passed_tests = sum(1 for r in results if r.status)
-            print(f"\nModule Testing Summary:")
-            print(f"Total Tests: {total_tests}")
-            print(f"Passed: {passed_tests}")
-            print(f"Failed: {total_tests - passed_tests}")
-            
-            logging.info("Core module tests completed")
-            
-        except Exception as e:
-            logging.error(f"Error in core module testing: {e}", exc_info=True)
-            print(f"\nError running module tests: {str(e)}")
-            print("Check the log file for details.")
+    # def run_command(self, command: str) -> tuple[int, str, str]:
+    #     """Execute shell command and return results"""
+    #     try:
+    #         process = subprocess.Popen(
+    #             command,
+    #             stdout=subprocess.PIPE,
+    #             stderr=subprocess.PIPE,
+    #             shell=True,
+    #             text=True
+    #         )
+    #         stdout, stderr = process.communicate()
+    #         return process.returncode, stdout, stderr
+    #     except Exception as e:
+    #         logging.error(f"Command execution failed: {e}")
+    #         return 1, "", str(e)
 
     def test_environment_configs(self):
         """Tests all environment terraform configurations"""
         logging.info("Starting all environment tests")
         print("\nTesting all environments...")
 
-        # Auto-detect available environments
         env_path = "environments"
         if not os.path.exists(env_path):
             logging.error(f"Environments directory not found: {env_path}")
@@ -498,7 +455,7 @@ class InfrastructureTestRunner:
             logging.error(f"Environment path not found: {env_path}")
             return
         
-        print(f"\nTesting {environment} environment...")  # Initial message
+        print(f"\nTesting {environment} environment...")
 
         # Initialize Terraform
         cmd = f"cd {env_path} && terraform init -backend=false"
@@ -521,7 +478,7 @@ class InfrastructureTestRunner:
                 time.time() - start_time
             ))
 
-            # Generate plan - THIS IS THE PART WE NEED TO UPDATE
+            # Generate plan
             if code == 0:
                 cmd = f"cd {env_path} && terraform plan -no-color -lock=false -var='environment={environment}'"
                 code, stdout, stderr = self.run_command(cmd)
@@ -531,15 +488,96 @@ class InfrastructureTestRunner:
                     "Plan generated successfully" if code == 0 else f"Plan failed: {stderr}",
                     time.time() - start_time
                 ))
-                
-        # Add completion message at the end
-        logging.info(f"Completed tests for {environment} environment")
-        print("\nTests completed.")  # Add this line at the end of the method
 
-    print("Testing completed.")
+        logging.info(f"Completed tests for {environment} environment")
+        print("Tests completed.")
+
+    def display_menu(self):
+        """Display interactive menu"""
+        while True:
+            print("\n=== Azure Infrastructure Testing Framework ===")
+            print("1. Test Infrastructure Modules")
+            print("2. Test Backend Configuration")
+            print("3. Test All Environments")
+            print("4. Test Development Environment")
+            print("5. Test Staging Environment")
+            print("6. Test Production Environment")
+            print("7. View Test Results")
+            print("8. Export Test Report")
+            print("9. Exit")
+
+            try:
+                choice = input("\nEnter your choice (1-9): ")
+                if choice == "9":
+                    print("\nExiting...")
+                    sys.exit(0)
+                    
+                self.handle_menu_choice(choice)
+                
+            except EOFError:
+                # Handle non-interactive execution (CI/CD)
+                print("\nNon-interactive mode detected. Running module tests...")
+                self.test_core_modules()
+                sys.exit(0)
+            except KeyboardInterrupt:
+                print("\nOperation cancelled by user.")
+                sys.exit(0)
+            except Exception as e:
+                logging.error(f"Error in menu operation: {e}")
+                print(f"\nError: {str(e)}")
+                continue
+
+    def handle_menu_choice(self, choice: str):
+        """Handle menu selections"""
+        handlers = {
+            "1": self.test_core_modules,
+            "2": self.test_backend_config,
+            "3": self.test_environment_configs,
+            "4": lambda: self.test_single_environment("dev"),
+            "5": lambda: self.test_single_environment("staging"),
+            "6": lambda: self.test_single_environment("prod"),
+            "7": self.display_results,
+            "8": self.export_test_report
+        }
+        
+        handler = handlers.get(choice)
+        if handler:
+            try:
+                handler()
+            except Exception as e:
+                logging.error(f"Error executing choice {choice}: {e}")
+                print(f"\nError executing operation: {str(e)}")
+        else:
+            print("\nInvalid choice. Please try again.")
+
+    def test_backend_config(self):
+        """Test backend configuration"""
+        print("\nTesting backend configuration...")
+        results = self.backend_validator.validate_backend()
+        self.test_results.extend(results)
+        print("Backend tests completed.")
+
+    def test_core_modules(self):
+        """Test core infrastructure modules"""
+        print("\nTesting Core Infrastructure Modules...")
+        try:
+            results = self.module_tester.test_all_modules()
+            self.test_results.extend(results)
+            
+            # Print summary
+            total_tests = len(results)
+            passed_tests = sum(1 for r in results if r.status)
+            print(f"\nModule Testing Summary:")
+            print(f"Total Tests: {total_tests}")
+            print(f"Passed: {passed_tests}")
+            print(f"Failed: {total_tests - passed_tests}")
+            
+        except Exception as e:
+            logging.error(f"Error in core module testing: {e}")
+            print(f"\nError running module tests: {str(e)}")
 
     def display_results(self):
-        """Display test results in a readable format"""
+        """Display test results"""
         if not self.test_results:
             print("\nNo test results available.")
             return
@@ -552,7 +590,7 @@ class InfrastructureTestRunner:
             print(f"Output:\n{result.output}")
 
     def export_test_report(self):
-        """Export test results to a JSON file"""
+        """Export test results to JSON"""
         if not self.test_results:
             print("\nNo test results to export.")
             return
@@ -563,24 +601,23 @@ class InfrastructureTestRunner:
         with open(report_file, 'w') as f:
             json.dump([result.to_dict() for result in self.test_results], f, indent=2)
 
-        logging.info(f"Test report exported to {report_file}")
         print(f"\nTest report exported to {report_file}")
 
-    def run_command(self, command: str) -> tuple[int, str, str]:
-        """Execute shell commands with proper error handling"""
-        try:
-            process = subprocess.Popen(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                shell=True,
-                text=True
-            )
-            stdout, stderr = process.communicate()
-            return process.returncode, stdout, stderr
-        except Exception as e:
-            logging.error(f"Command execution failed: {e}")
-            return 1, "", str(e)
+    # def run_command(self, command: str) -> tuple[int, str, str]:
+    #     """Execute shell commands with proper error handling"""
+    #     try:
+    #         process = subprocess.Popen(
+    #             command,
+    #             stdout=subprocess.PIPE,
+    #             stderr=subprocess.PIPE,
+    #             shell=True,
+    #             text=True
+    #         )
+    #         stdout, stderr = process.communicate()
+    #         return process.returncode, stdout, stderr
+    #     except Exception as e:
+    #         logging.error(f"Command execution failed: {e}")
+    #         return 1, "", str(e)
         
 
 """
@@ -935,5 +972,93 @@ class ProductionValidator(EnvironmentValidator):
         return results
 
 if __name__ == "__main__":
+    import argparse
+    import sys
+
+    # Create argument parser
+    parser = argparse.ArgumentParser(
+        description="Infrastructure Testing Framework",
+        epilog="""
+        Menu Choices Mapped to --test-type in CI mode:
+          1 -> modules     (Test core modules)
+          2 -> backend     (Test backend config)
+          3 -> all-env     (Test all environments)
+          4 -> dev         (Test single environment: dev)
+          5 -> staging     (Test single environment: staging)
+          6 -> prod        (Test single environment: prod)
+        """
+    )
+    parser.add_argument(
+        "--ci", 
+        action="store_true",
+        help="Run in CI mode (non-interactive). Bypasses the menu."
+    )
+    parser.add_argument(
+        "--test-type",
+        choices=["modules", "backend", "all-env", "dev", "staging", "prod"],
+        help=(
+            "Type of test to run in CI mode:\n"
+            "  modules  -> (Menu #1) Test core modules\n"
+            "  backend  -> (Menu #2) Test backend config\n"
+            "  all-env  -> (Menu #3) Test all environments\n"
+            "  dev      -> (Menu #4) Test dev environment\n"
+            "  staging  -> (Menu #5) Test staging environment\n"
+            "  prod     -> (Menu #6) Test production environment\n"
+        )
+    )
+    parser.add_argument(
+        "--output",
+        help="Output file for test results (JSON). Exported after tests run."
+    )
+
+    args = parser.parse_args()
     runner = InfrastructureTestRunner()
-    runner.display_menu()
+
+    try:
+        if args.ci:
+            # ========== CI/CD mode ==========
+            if args.test_type == "modules":
+                # Menu #1 equivalent
+                runner.test_core_modules()
+            elif args.test_type == "backend":
+                # Menu #2 equivalent
+                runner.test_backend_config()
+            elif args.test_type == "all-env":
+                # Menu #3 equivalent
+                runner.test_environment_configs()
+            elif args.test_type in ["dev", "staging", "prod"]:
+                # Menu #4, 5, 6 equivalents
+                runner.test_single_environment(args.test_type)
+            else:
+                # If --ci is specified but no --test-type,
+                # default to test #1 (modules)
+                runner.test_core_modules()
+
+            # Export results if output file specified
+            if args.output:
+                runner.export_test_report()
+
+            # Display results at the end
+            runner.display_results()
+
+            # Exit code: 0 if all tests passed, 1 otherwise
+            sys.exit(0 if all(r.status for r in runner.test_results) else 1)
+
+        else:
+            # ========== Interactive (Menu) mode ==========
+            try:
+                runner.display_menu()
+            except EOFError:
+                # Handle non-interactive environment gracefully
+                print("\nNon-interactive environment detected.")
+                print("Use --ci flag and --test-type for CI/CD mode, e.g.:")
+                print("  python infrastructure_test.py --ci --test-type modules")
+                sys.exit(1)
+            except KeyboardInterrupt:
+                print("\nOperation cancelled by user.")
+                sys.exit(0)
+
+    except Exception as e:
+        logging.error(f"Error running tests: {str(e)}")
+        print(f"\nError: {str(e)}")
+        sys.exit(1)
