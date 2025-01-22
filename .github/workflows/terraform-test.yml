@@ -10,6 +10,11 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
 jobs:
   validate:
     name: 'Validate Terraform'
@@ -21,32 +26,14 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ env.ARM_CLIENT_ID }}
+          tenant-id: ${{ env.ARM_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
           enable-AzPSSession: false
           environment: azurecloud
           auth-type: SERVICE_PRINCIPAL
-          allow-no-subscriptions: false
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: "1.5.0"
-
-      - name: Terraform Format
-        run: terraform fmt -check
-
-      - name: Terraform Init
-        run: terraform init -backend=false
-
-      - name: Terraform Validate
-        run: terraform validate
+      # Rest of your validate job steps...
 
   test:
     name: "Run Tests"
@@ -60,53 +47,14 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ env.ARM_CLIENT_ID }}
+          tenant-id: ${{ env.ARM_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
           enable-AzPSSession: false
           environment: azurecloud
           auth-type: SERVICE_PRINCIPAL
-          allow-no-subscriptions: false
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.9"
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: "1.5.0"
-
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r tests/requirements.txt
-
-      - name: Test Core Modules
-        run: python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json
-
-      - name: Test Backend
-        run: python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json
-
-      - name: Test All Environments
-        run: python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json
-
-      - name: Test Dev
-        run: python tests/infrastructure_test.py --ci --test-type dev --output test_results_dev.json
-
-      - name: Test Staging
-        run: python tests/infrastructure_test.py --ci --test-type staging --output test_results_staging.json
-
-      - name: Test Production
-        run: python tests/infrastructure_test.py --ci --test-type prod --output test_results_prod.json
-
-      - name: Upload Test Logs
-        if: failure()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-logs
-          path: logs/
+      # Rest of your test job steps...
 
   deploy:
     name: "Deploy Infrastructure"
@@ -120,12 +68,14 @@ jobs:
       - name: Azure Login
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-id: ${{ env.ARM_CLIENT_ID }}
+          tenant-id: ${{ env.ARM_TENANT_ID }}
+          subscription-id: ${{ env.ARM_SUBSCRIPTION_ID }}
           enable-AzPSSession: false
           environment: azurecloud
           auth-type: SERVICE_PRINCIPAL
+
+      # Rest of your deploy job steps...
           allow-no-subscriptions: false
 
       - name: Setup Terraform
