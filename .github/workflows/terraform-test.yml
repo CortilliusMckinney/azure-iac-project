@@ -13,6 +13,8 @@ env:
   ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
   ARM_SUBSCRIPTION_ID: "26fa681b-266b-4a85-b7f0-d0b40312d4e0"
   ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  TF_LOG: DEBUG
+  PYTHONUNBUFFERED: 1
 
 jobs:
   validate:
@@ -85,29 +87,81 @@ jobs:
           echo "Verification Complete"
 
       - name: Test Core Modules
-        run: python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json
+        run: |
+          echo "Testing Core Modules..."
+          python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json || {
+            echo "=== Core Modules Test Failed ==="
+            cat test_results_modules.json
+            terraform show
+            exit 1
+          }
 
       - name: Test Backend
-        run: python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json
+        run: |
+          echo "Testing Backend Configuration..."
+          python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json || {
+            echo "=== Backend Test Failed ==="
+            cat test_results_backend.json
+            terraform show
+            exit 1
+          }
       
       - name: Test All Environments
-        run: python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json
+        run: |
+          echo "Testing All Environments..."
+          python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json || {
+            echo "=== All Environments Test Failed ==="
+            cat test_results_allenv.json
+            terraform show
+            exit 1
+          }
 
       - name: Test Dev
-        run: python tests/infrastructure_test.py --ci --test-type dev --output test_results_dev.json
+        run: |
+          echo "Testing Dev Environment..."
+          python tests/infrastructure_test.py --ci --test-type dev --output test_results_dev.json || {
+            echo "=== Dev Environment Test Failed ==="
+            cat test_results_dev.json
+            cd environments/dev
+            terraform init -backend=false
+            terraform plan -detailed-exitcode
+            exit 1
+          }
 
       - name: Test Staging
-        run: python tests/infrastructure_test.py --ci --test-type staging --output test_results_staging.json
+        run: |
+          echo "Testing Staging Environment..."
+          python tests/infrastructure_test.py --ci --test-type staging --output test_results_staging.json || {
+            echo "=== Staging Environment Test Failed ==="
+            cat test_results_staging.json
+            cd environments/staging
+            terraform init -backend=false
+            terraform plan -detailed-exitcode
+            exit 1
+          }
 
       - name: Test Production
-        run: python tests/infrastructure_test.py --ci --test-type prod --output test_results_prod.json
+        run: |
+          echo "Testing Production Environment..."
+          python tests/infrastructure_test.py --ci --test-type prod --output test_results_prod.json || {
+            echo "=== Production Environment Test Failed ==="
+            cat test_results_prod.json
+            cd environments/prod
+            terraform init -backend=false
+            terraform plan -detailed-exitcode
+            exit 1
+          }
 
-      - name: Upload Test Logs
-        if: failure()
+      - name: Upload Test Results
+        if: always()
         uses: actions/upload-artifact@v3
         with:
-          name: test-logs
-          path: logs/
+          name: test-results
+          path: |
+            **/*.json
+            **/logs/
+            **/terraform.log
+            **/.terraform.log
 
   deploy:
     name: "Deploy Infrastructure"
