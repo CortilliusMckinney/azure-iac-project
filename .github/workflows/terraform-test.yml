@@ -42,18 +42,20 @@ jobs:
             exit 0
           fi
           cd environments/staging
+          
           echo "Running Terraform Init..."
           terraform init -no-color -backend=false > staging_init.log 2>&1 || { cat staging_init.log; exit 1; }
-
+          
           echo "Running Terraform Validate..."
           terraform validate -no-color > staging_validate.log 2>&1 || { cat staging_validate.log; exit 1; }
-
+          
           echo "Running Terraform Plan..."
-          terraform plan -no-color -input=false -var-file=terraform.tfvars > staging_plan.log 2>&1 || {
+          # Add -backend=false to plan command as well
+          terraform plan -no-color -backend=false -input=false -var-file=terraform.tfvars > staging_plan.log 2>&1 || {
             echo "=== Plan Failed ==="
             echo "Debugging Output:"
             cat staging_plan.log
-            TF_LOG=DEBUG terraform plan -no-color -input=false -var-file=terraform.tfvars > staging_debug.log 2>&1
+            TF_LOG=DEBUG terraform plan -no-color -backend=false -input=false -var-file=terraform.tfvars > staging_debug.log 2>&1
             cat staging_debug.log
             exit 1
           }
