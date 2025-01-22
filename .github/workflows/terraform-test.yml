@@ -29,14 +29,6 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Debug Subscription ID
-        run: echo "Subscription ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-
-      - name: Set Azure Subscription
-        run: |
-          echo "Setting Azure Subscription..."
-          az account set --subscription="${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -70,14 +62,6 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Debug Subscription ID
-        run: echo "Subscription ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-
-      - name: Set Azure Subscription
-        run: |
-          echo "Setting Azure Subscription..."
-          az account set --subscription="${{ secrets.AZURE_SUBSCRIPTION_ID }}"
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -93,6 +77,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r tests/requirements.txt
           pip install azure-cli
+
+      - name: Verify Azure Login
+        run: |
+          echo "Current Azure Account:"
+          az account show
+          echo "Setting Azure Subscription..."
+          az account set --subscription="26fa681b-266b-4a85-b7f0-d0b40312d4e0"
 
       - name: Test Core Modules
         run: |
