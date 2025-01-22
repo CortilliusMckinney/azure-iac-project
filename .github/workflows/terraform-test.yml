@@ -86,67 +86,22 @@ jobs:
           az account set --subscription="26fa681b-266b-4a85-b7f0-d0b40312d4e0"
 
       - name: Test Core Modules
-        run: python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json || {
-            echo "=== Core Modules Test Failed ==="
-            cat test_results_modules.json || true
-            terraform show || true
-            exit 1
-          }
+        run: python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json
 
       - name: Test Backend
-        run: python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json || {
-            echo "=== Backend Test Failed ==="
-            cat test_results_backend.json || true
-            terraform show || true
-            exit 1
-          }
+        run: python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json
       
       - name: Test All Environments
-        run: python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json || {
-            echo "=== All Environments Test Failed ==="
-            cat test_results_allenv.json || true
-            terraform show || true
-            exit 1
-          }
+        run: python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json
 
       - name: Test Dev
-        run: python tests/infrastructure_test.py --ci --test-type dev --output test_results_dev.json || {
-            echo "=== Dev Environment Test Failed ==="
-            cat test_results_dev.json || true
-            cd environments/dev || true
-            terraform init -backend=false
-            terraform plan || true
-            terraform show || true
-            echo "=== Terraform Logs ==="
-            find . -name "*.log" -type f -exec cat {} \;
-            exit 1
-          }
+        run: python tests/infrastructure_test.py --ci --test-type dev --output test_results_dev.json
 
       - name: Test Staging
-        run: python tests/infrastructure_test.py --ci --test-type staging --output test_results_staging.json || {
-            echo "=== Staging Environment Test Failed ==="
-            cat test_results_staging.json || true
-            cd environments/staging || true
-            terraform init -backend=false
-            terraform plan || true
-            terraform show || true
-            echo "=== Terraform Logs ==="
-            find . -name "*.log" -type f -exec cat {} \;
-            exit 1
-          }
+        run: python tests/infrastructure_test.py --ci --test-type staging --output test_results_staging.json
 
       - name: Test Production
-        run: python tests/infrastructure_test.py --ci --test-type prod --output test_results_prod.json || {
-            echo "=== Production Environment Test Failed ==="
-            cat test_results_prod.json || true
-            cd environments/prod || true
-            terraform init -backend=false
-            terraform plan || true
-            terraform show || true
-            echo "=== Terraform Logs ==="
-            find . -name "*.log" -type f -exec cat {} \;
-            exit 1
-          }
+        run: python tests/infrastructure_test.py --ci --test-type prod --output test_results_prod.json
 
       - name: Upload Test Results
         if: failure()
