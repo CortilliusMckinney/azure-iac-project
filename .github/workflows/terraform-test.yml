@@ -43,9 +43,16 @@ jobs:
             exit 0
           fi
           cd environments/staging
-
+          
+          # Create temporary backend config for testing
+          cat > backend_override.tf <<EOF
+          terraform {
+            backend "local" {}
+          }
+          EOF
+          
           echo "Running Terraform Init..."
-          terraform init -no-color -backend=false > staging_init.log 2>&1 || { cat staging_init.log; exit 1; }
+          terraform init -no-color > staging_init.log 2>&1 || { cat staging_init.log; exit 1; }
 
           echo "Running Terraform Validate..."
           terraform validate -no-color > staging_validate.log 2>&1 || { cat staging_validate.log; exit 1; }
@@ -59,6 +66,9 @@ jobs:
             cat staging_debug.log
             exit 1
           }
+          
+          # Clean up temporary backend config
+          rm backend_override.tf
 
       - name: Upload Test Results
         if: failure()
