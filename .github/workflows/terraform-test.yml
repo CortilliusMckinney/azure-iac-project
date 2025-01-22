@@ -84,84 +84,79 @@ jobs:
           az account show
           echo "Setting Azure Subscription..."
           az account set --subscription="26fa681b-266b-4a85-b7f0-d0b40312d4e0"
-          echo "Verification Complete"
 
       - name: Test Core Modules
-        run: |
-          echo "Testing Core Modules..."
-          python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json || {
+        run: python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json || {
             echo "=== Core Modules Test Failed ==="
-            cat test_results_modules.json
-            terraform show
+            cat test_results_modules.json || true
+            terraform show || true
             exit 1
           }
 
       - name: Test Backend
-        run: |
-          echo "Testing Backend Configuration..."
-          python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json || {
+        run: python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json || {
             echo "=== Backend Test Failed ==="
-            cat test_results_backend.json
-            terraform show
+            cat test_results_backend.json || true
+            terraform show || true
             exit 1
           }
       
       - name: Test All Environments
-        run: |
-          echo "Testing All Environments..."
-          python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json || {
+        run: python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json || {
             echo "=== All Environments Test Failed ==="
-            cat test_results_allenv.json
-            terraform show
+            cat test_results_allenv.json || true
+            terraform show || true
             exit 1
           }
 
       - name: Test Dev
-        run: |
-          echo "Testing Dev Environment..."
-          python tests/infrastructure_test.py --ci --test-type dev --output test_results_dev.json || {
+        run: python tests/infrastructure_test.py --ci --test-type dev --output test_results_dev.json || {
             echo "=== Dev Environment Test Failed ==="
-            cat test_results_dev.json
-            cd environments/dev
+            cat test_results_dev.json || true
+            cd environments/dev || true
             terraform init -backend=false
-            terraform plan -detailed-exitcode
+            terraform plan || true
+            terraform show || true
+            echo "=== Terraform Logs ==="
+            find . -name "*.log" -type f -exec cat {} \;
             exit 1
           }
 
       - name: Test Staging
-        run: |
-          echo "Testing Staging Environment..."
-          python tests/infrastructure_test.py --ci --test-type staging --output test_results_staging.json || {
+        run: python tests/infrastructure_test.py --ci --test-type staging --output test_results_staging.json || {
             echo "=== Staging Environment Test Failed ==="
-            cat test_results_staging.json
-            cd environments/staging
+            cat test_results_staging.json || true
+            cd environments/staging || true
             terraform init -backend=false
-            terraform plan -detailed-exitcode
+            terraform plan || true
+            terraform show || true
+            echo "=== Terraform Logs ==="
+            find . -name "*.log" -type f -exec cat {} \;
             exit 1
           }
 
       - name: Test Production
-        run: |
-          echo "Testing Production Environment..."
-          python tests/infrastructure_test.py --ci --test-type prod --output test_results_prod.json || {
+        run: python tests/infrastructure_test.py --ci --test-type prod --output test_results_prod.json || {
             echo "=== Production Environment Test Failed ==="
-            cat test_results_prod.json
-            cd environments/prod
+            cat test_results_prod.json || true
+            cd environments/prod || true
             terraform init -backend=false
-            terraform plan -detailed-exitcode
+            terraform plan || true
+            terraform show || true
+            echo "=== Terraform Logs ==="
+            find . -name "*.log" -type f -exec cat {} \;
             exit 1
           }
 
       - name: Upload Test Results
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: test-results
+          name: failed-test-results
           path: |
             **/*.json
             **/logs/
-            **/terraform.log
-            **/.terraform.log
+            **/*.log
 
   deploy:
     name: "Deploy Infrastructure"
