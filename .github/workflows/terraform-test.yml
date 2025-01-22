@@ -1,29 +1,32 @@
-name: 'Terraform Tests'
+name: "Terraform Tests"
 
 on:
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
   push:
-    branches: [ main ]
+    branches:
+      - main
 
-permissions:
-  id-token: write
-  contents: read
+env:
+  ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
 
 jobs:
   validate:
-    name: 'Validate Terraform'
+    name: "Validate Terraform"
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
 
-      - name: 'Az CLI login'
+      # Securely authenticate with Azure using azure/login@v1
+      - name: Azure CLI Login
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -53,14 +56,58 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: 'Az CLI login'
-        uses: azure/login@v1
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          python-version: "3.9"
 
-      # Rest of test job steps...
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.0"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/requirements.txt
+
+      # Test Core Modules
+      - name: Test Core Modules
+        run: |
+          python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json
+
+      # Test Backend Config
+      - name: Test Backend
+        run: |
+          python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json
+
+      # Test All Environments
+      - name: Test All Environments
+        run: |
+          python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json
+
+      # Test Dev Environment
+      - name: Test Dev
+        run: |
+          python tests/infrastructure_test.py --ci --test-type dev --output test_results_dev.json
+
+      # Test Staging Environment
+      - name: Test Staging
+        run: |
+          python tests/infrastructure_test.py --ci --test-type staging --output test_results_staging.json
+
+      # Test Production Environment
+      - name: Test Production
+        run: |
+          python tests/infrastructure_test.py --ci --test-type prod --output test_results_prod.json
+
+      # Upload Logs on Failure
+      - name: Upload Test Logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-logs
+          path: logs/
 
   deploy:
     name: "Deploy Infrastructure"
@@ -70,19 +117,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: 'Az CLI login'
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-          enable-AzPSSession: false
-          environment: azurecloud
-          auth-type: SERVICE_PRINCIPAL
-
-      # Rest of your deploy job steps...
-          allow-no-subscriptions: false
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
