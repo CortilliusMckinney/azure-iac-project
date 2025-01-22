@@ -106,6 +106,9 @@ jobs:
           fi
           cd environments/dev
           
+          # Remove any existing override files
+          rm -f backend_override.tf terraform.tfvars
+
           echo "Creating terraform.tfvars..."
           cat > terraform.tfvars <<EOF
           environment       = "dev"
@@ -124,22 +127,32 @@ jobs:
           client_id       = "$ARM_CLIENT_ID"
           client_secret   = "$ARM_CLIENT_SECRET"
           EOF
-
+          
+          cat > backend_override.tf <<EOF
+          terraform {
+            backend "local" {}
+          }
+          EOF
+          
           echo "Running Terraform Init..."
-          terraform init -no-color -backend=false > dev_init.log 2>&1 || { cat dev_init.log; exit 1; }
+          terraform init -no-color > dev_init.log 2>&1 || { cat dev_init.log; exit 1; }
 
           echo "Running Terraform Validate..."
           terraform validate -no-color > dev_validate.log 2>&1 || { cat dev_validate.log; exit 1; }
 
           echo "Running Terraform Plan..."
-          terraform plan -no-color -input=false -var-file=terraform.tfvars > dev_plan.log 2>&1 || {
+          terraform plan -no-color -input=false > dev_plan.log 2>&1 || {
             echo "=== Plan Failed ==="
             echo "Debugging Output:"
             cat dev_plan.log
-            TF_LOG=DEBUG terraform plan -no-color -input=false -var-file=terraform.tfvars > dev_debug.log 2>&1
+            TF_LOG=DEBUG terraform plan -no-color -input=false > dev_debug.log 2>&1
             cat dev_debug.log
             exit 1
           }
+          
+          # Clean up
+          rm -f backend_override.tf terraform.tfvars
+          cd ..
 
       - name: Test Staging Environment
         run: |
@@ -149,6 +162,9 @@ jobs:
             exit 0
           fi
           cd environments/staging
+          
+          # Remove any existing override files
+          rm -f backend_override.tf terraform.tfvars
           
           echo "Creating terraform.tfvars..."
           cat > terraform.tfvars <<EOF
@@ -168,22 +184,32 @@ jobs:
           client_id       = "$ARM_CLIENT_ID"
           client_secret   = "$ARM_CLIENT_SECRET"
           EOF
-
+          
+          cat > backend_override.tf <<EOF
+          terraform {
+            backend "local" {}
+          }
+          EOF
+          
           echo "Running Terraform Init..."
-          terraform init -no-color -backend=false > staging_init.log 2>&1 || { cat staging_init.log; exit 1; }
+          terraform init -no-color > staging_init.log 2>&1 || { cat staging_init.log; exit 1; }
 
           echo "Running Terraform Validate..."
           terraform validate -no-color > staging_validate.log 2>&1 || { cat staging_validate.log; exit 1; }
 
           echo "Running Terraform Plan..."
-          terraform plan -no-color -input=false -var-file=terraform.tfvars > staging_plan.log 2>&1 || {
+          terraform plan -no-color -input=false > staging_plan.log 2>&1 || {
             echo "=== Plan Failed ==="
             echo "Debugging Output:"
             cat staging_plan.log
-            TF_LOG=DEBUG terraform plan -no-color -input=false -var-file=terraform.tfvars > staging_debug.log 2>&1
+            TF_LOG=DEBUG terraform plan -no-color -input=false > staging_debug.log 2>&1
             cat staging_debug.log
             exit 1
           }
+          
+          # Clean up
+          rm -f backend_override.tf terraform.tfvars
+          cd ..
 
       - name: Test Production Environment
         run: |
@@ -193,6 +219,9 @@ jobs:
             exit 0
           fi
           cd environments/prod
+          
+          # Remove any existing override files
+          rm -f backend_override.tf terraform.tfvars
           
           echo "Creating terraform.tfvars..."
           cat > terraform.tfvars <<EOF
@@ -212,22 +241,32 @@ jobs:
           client_id       = "$ARM_CLIENT_ID"
           client_secret   = "$ARM_CLIENT_SECRET"
           EOF
-
+          
+          cat > backend_override.tf <<EOF
+          terraform {
+            backend "local" {}
+          }
+          EOF
+          
           echo "Running Terraform Init..."
-          terraform init -no-color -backend=false > prod_init.log 2>&1 || { cat prod_init.log; exit 1; }
+          terraform init -no-color > prod_init.log 2>&1 || { cat prod_init.log; exit 1; }
 
           echo "Running Terraform Validate..."
           terraform validate -no-color > prod_validate.log 2>&1 || { cat prod_validate.log; exit 1; }
 
           echo "Running Terraform Plan..."
-          terraform plan -no-color -input=false -var-file=terraform.tfvars > prod_plan.log 2>&1 || {
+          terraform plan -no-color -input=false > prod_plan.log 2>&1 || {
             echo "=== Plan Failed ==="
             echo "Debugging Output:"
             cat prod_plan.log
-            TF_LOG=DEBUG terraform plan -no-color -input=false -var-file=terraform.tfvars > prod_debug.log 2>&1
+            TF_LOG=DEBUG terraform plan -no-color -input=false > prod_debug.log 2>&1
             cat prod_debug.log
             exit 1
           }
+          
+          # Clean up
+          rm -f backend_override.tf terraform.tfvars
+          cd ..
 
       - name: Upload Test Logs
         if: failure()
