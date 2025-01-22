@@ -17,10 +17,10 @@ env:
   PYTHONUNBUFFERED: 1
 
 jobs:
-  test:
-    name: "Run Tests"
+  validate:
+    name: "Validate Terraform"
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+
     steps:
       - uses: actions/checkout@v3
 
@@ -29,12 +29,119 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: "1.5.0"
 
-      - name: Test Staging
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+  test:
+    name: "Run Tests"
+    needs: validate
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure CLI Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.0"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/requirements.txt
+          pip install azure-cli
+
+      - name: Verify Azure Login
+        run: |
+          echo "Current Azure Account:"
+          az account show
+          echo "Setting Azure Subscription..."
+          az account set --subscription="26fa681b-266b-4a85-b7f0-d0b40312d4e0"
+
+      - name: Test Core Modules
+        run: |
+          python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json
+
+      - name: Test Backend
+        run: |
+          python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json
+      
+      - name: Test All Environments
+        run: |
+          python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json
+
+      - name: Test Dev Environment
+        run: |
+          echo "=== Testing Dev Environment ==="
+          if [ ! -d "environments/dev" ]; then
+            echo "Dev environment directory not found. Skipping..."
+            exit 0
+          fi
+          cd environments/dev
+          
+          echo "Creating terraform.tfvars..."
+          cat > terraform.tfvars <<EOF
+          environment       = "dev"
+          location         = "eastus"
+          project_name     = "azure-iac-test"
+          subscription_id  = "$ARM_SUBSCRIPTION_ID"
+          address_space    = ["10.0.0.0/16"]
+          allowed_ip_ranges = [
+            "184.89.240.160/30",
+            "20.37.158.0/23",
+            "20.37.194.0/24",
+            "20.38.34.0/23"
+          ]
+          admin_username   = "azureuser"
+          tenant_id       = "$ARM_TENANT_ID"
+          client_id       = "$ARM_CLIENT_ID"
+          client_secret   = "$ARM_CLIENT_SECRET"
+          EOF
+
+          echo "Running Terraform Init..."
+          terraform init -no-color -backend=false > dev_init.log 2>&1 || { cat dev_init.log; exit 1; }
+
+          echo "Running Terraform Validate..."
+          terraform validate -no-color > dev_validate.log 2>&1 || { cat dev_validate.log; exit 1; }
+
+          echo "Running Terraform Plan..."
+          terraform plan -no-color -input=false -var-file=terraform.tfvars > dev_plan.log 2>&1 || {
+            echo "=== Plan Failed ==="
+            echo "Debugging Output:"
+            cat dev_plan.log
+            TF_LOG=DEBUG terraform plan -no-color -input=false -var-file=terraform.tfvars > dev_debug.log 2>&1
+            cat dev_debug.log
+            exit 1
+          }
+
+      - name: Test Staging Environment
         run: |
           echo "=== Testing Staging Environment ==="
           if [ ! -d "environments/staging" ]; then
@@ -61,39 +168,98 @@ jobs:
           client_id       = "$ARM_CLIENT_ID"
           client_secret   = "$ARM_CLIENT_SECRET"
           EOF
-          
-          # Create temporary backend config
-          cat > backend_override.tf <<EOF
-          terraform {
-            backend "local" {}
-          }
-          EOF
-          
+
           echo "Running Terraform Init..."
-          terraform init -no-color > staging_init.log 2>&1 || { cat staging_init.log; exit 1; }
+          terraform init -no-color -backend=false > staging_init.log 2>&1 || { cat staging_init.log; exit 1; }
 
           echo "Running Terraform Validate..."
           terraform validate -no-color > staging_validate.log 2>&1 || { cat staging_validate.log; exit 1; }
 
           echo "Running Terraform Plan..."
-          terraform plan -no-color -input=false > staging_plan.log 2>&1 || {
+          terraform plan -no-color -input=false -var-file=terraform.tfvars > staging_plan.log 2>&1 || {
             echo "=== Plan Failed ==="
             echo "Debugging Output:"
             cat staging_plan.log
-            TF_LOG=DEBUG terraform plan -no-color -input=false > staging_debug.log 2>&1
+            TF_LOG=DEBUG terraform plan -no-color -input=false -var-file=terraform.tfvars > staging_debug.log 2>&1
             cat staging_debug.log
             exit 1
           }
-          
-          # Clean up temporary files
-          rm backend_override.tf terraform.tfvars
 
-      - name: Upload Test Results
+      - name: Test Production Environment
+        run: |
+          echo "=== Testing Production Environment ==="
+          if [ ! -d "environments/prod" ]; then
+            echo "Production environment directory not found. Skipping..."
+            exit 0
+          fi
+          cd environments/prod
+          
+          echo "Creating terraform.tfvars..."
+          cat > terraform.tfvars <<EOF
+          environment       = "prod"
+          location         = "eastus"
+          project_name     = "azure-iac-test"
+          subscription_id  = "$ARM_SUBSCRIPTION_ID"
+          address_space    = ["10.0.0.0/16"]
+          allowed_ip_ranges = [
+            "184.89.240.160/30",
+            "20.37.158.0/23",
+            "20.37.194.0/24",
+            "20.38.34.0/23"
+          ]
+          admin_username   = "azureuser"
+          tenant_id       = "$ARM_TENANT_ID"
+          client_id       = "$ARM_CLIENT_ID"
+          client_secret   = "$ARM_CLIENT_SECRET"
+          EOF
+
+          echo "Running Terraform Init..."
+          terraform init -no-color -backend=false > prod_init.log 2>&1 || { cat prod_init.log; exit 1; }
+
+          echo "Running Terraform Validate..."
+          terraform validate -no-color > prod_validate.log 2>&1 || { cat prod_validate.log; exit 1; }
+
+          echo "Running Terraform Plan..."
+          terraform plan -no-color -input=false -var-file=terraform.tfvars > prod_plan.log 2>&1 || {
+            echo "=== Plan Failed ==="
+            echo "Debugging Output:"
+            cat prod_plan.log
+            TF_LOG=DEBUG terraform plan -no-color -input=false -var-file=terraform.tfvars > prod_debug.log 2>&1
+            cat prod_debug.log
+            exit 1
+          }
+
+      - name: Upload Test Logs
         if: failure()
         uses: actions/upload-artifact@v3
         with:
-          name: failed-test-results
+          name: failed-test-logs
           path: |
-            **/*.json
-            **/logs/
-            **/*.log
+            environments/dev/*.log
+            environments/staging/*.log
+            environments/prod/*.log
+
+  deploy:
+    name: "Deploy Infrastructure"
+    needs: [validate, test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure CLI Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.0"
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
