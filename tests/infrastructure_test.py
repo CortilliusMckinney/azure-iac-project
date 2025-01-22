@@ -216,14 +216,40 @@ class BackendValidator(CommandRunner):
         """Validates state container configuration"""
         start_time = time.time()
         
-        # List containers using Azure AD auth
-        cmd = f"az storage container list --account-name {self.storage_account} --auth-mode login"
+        # First check network rules
+        cmd = f"az storage account show --name {self.storage_account} --resource-group {self.resource_group} --query networkRuleSet"
         code, stdout, stderr = self.run_command(cmd)
         
-        if code == 0:
-            try:
+        if code != 0:
+            return TestResult(
+                "Backend State Container",
+                False,
+                f"Failed to check network rules: {stderr}",
+                time.time() - start_time
+            )
+
+        try:
+            network_rules = json.loads(stdout)
+            allowed_ips = [rule['ipAddressOrRange'] for rule in network_rules.get('ipRules', [])]
+
+            # Update the storage account network rules to allow GitHub Actions
+            cmd = f"az storage account network-rule add --resource-group {self.resource_group} --account-name {self.storage_account} --ip-address 20.37.194.0/24 20.37.158.0/23 20.38.34.0/23"
+            code, stdout, stderr = self.run_command(cmd)
+            
+            if code != 0:
+                return TestResult(
+                    "Backend State Container",
+                    False,
+                    f"Failed to update network rules: {stderr}",
+                    time.time() - start_time
+                )
+            
+            # Now try to list containers
+            cmd = f"az storage container list --account-name {self.storage_account} --auth-mode login"
+            code, stdout, stderr = self.run_command(cmd)
+            
+            if code == 0:
                 containers = json.loads(stdout)
-                # Look for our tfstate container
                 tfstate_container = next((c for c in containers if c['name'] == self.container_name), None)
                 
                 status = (
@@ -232,13 +258,14 @@ class BackendValidator(CommandRunner):
                 )
                 
                 output = ("State container properly configured" if status 
-                else "Container not found or incorrectly configured")
-            except json.JSONDecodeError as e:
+                        else "Container not found or incorrectly configured")
+            else:
                 status = False
-                output = f"Failed to parse container info: {e}"
-        else:
+                output = f"Container validation failed: {stderr}"
+                
+        except json.JSONDecodeError as e:
             status = False
-            output = f"Container validation failed: {stderr}"
+            output = f"Failed to parse container info: {e}"
             
         return TestResult(
             "Backend State Container",
