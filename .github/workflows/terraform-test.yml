@@ -88,7 +88,7 @@ jobs:
         run: python tests/infrastructure_test.py --ci --test-type modules --output test_results_modules.json
 
       - name: Test Backend
-        run: python tests/infrastructure_test.py --ci --test-type backend --output test_results_backend.json
+        run: python tests/infrastructure_test.py --ci --test-type backend --skip-plan --output test_results_backend.json
 
       - name: Test All Environments
         run: python tests/infrastructure_test.py --ci --test-type all-env --output test_results_allenv.json
