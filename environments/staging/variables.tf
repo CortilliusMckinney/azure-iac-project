@@ -109,3 +109,18 @@ variable "environment_config" {
     }
   }
 }
+variable "tenant_id" {
+  description = "The tenant ID of the Azure subscription"
+  type        = string
+}
+
+variable "client_id" {
+  description = "The client ID for the Azure service principal"
+  type        = string
+}
+
+variable "client_secret" {
+  description = "The client secret for the Azure service principal"
+  type        = string
+  sensitive   = true
+}
