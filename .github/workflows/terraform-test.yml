@@ -37,13 +37,11 @@ jobs:
           if [ ! -d "environments/staging" ]; then
             echo "Status: ⚠️ SKIP" 
             echo "Duration: 0s"
-            echo "Output: Staging environment directory not found. Skipping..."
+            echo "Output: Staging environment directory not found"
             exit 0
           fi
           cd environments/staging
           
-          # Create configs
-          echo "Creating terraform.tfvars..."
           cat > terraform.tfvars <<EOF
           environment = "staging"
           location = "eastus"
@@ -68,7 +66,6 @@ jobs:
           }
           EOF
 
-          # Init
           SECONDS=0
           terraform init -no-color > staging_init.log 2>&1
           init_status=$?
@@ -84,7 +81,6 @@ jobs:
           echo "Duration: ${init_duration}s"
           echo "Output: $(cat staging_init.log)"
 
-          # Validate  
           echo "Test: Staging Terraform Validate"
           SECONDS=0
           terraform validate -no-color > staging_validate.log 2>&1
@@ -101,7 +97,6 @@ jobs:
           echo "Duration: ${validate_duration}s"
           echo "Output: $(cat staging_validate.log)"
 
-          # Plan
           echo "Test: Staging Terraform Plan" 
           SECONDS=0
           terraform plan -no-color -input=false > staging_plan.log 2>&1
@@ -112,17 +107,12 @@ jobs:
             echo "Status: ✅ PASS"
           else
             echo "Status: ❌ FAIL"
-            echo "Duration: ${plan_duration}s"
-            echo "Output:"
             cat staging_plan.log
-            TF_LOG=DEBUG terraform plan -no-color -input=false > staging_debug.log 2>&1
-            cat staging_debug.log
             exit 1
           fi
           echo "Duration: ${plan_duration}s"
           echo "Output: Plan generated successfully"
 
-          # Cleanup
           rm backend_override.tf terraform.tfvars
 
   validate:
