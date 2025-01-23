@@ -33,13 +33,16 @@ jobs:
           terraform_version: "1.5.0"
       - name: Test Staging
         run: |
-          echo "=== Testing Staging Environment ==="
+          echo "Test: Staging Terraform Init"
           if [ ! -d "environments/staging" ]; then
-            echo "Staging environment directory not found. Skipping..."
+            echo "Status: ⚠️ SKIP" 
+            echo "Duration: 0s"
+            echo "Output: Staging environment directory not found. Skipping..."
             exit 0
           fi
           cd environments/staging
           
+          # Create configs
           echo "Creating terraform.tfvars..."
           cat > terraform.tfvars <<EOF
           environment = "staging"
@@ -48,7 +51,7 @@ jobs:
           subscription_id = "$ARM_SUBSCRIPTION_ID"
           address_space = ["10.0.0.0/16"]
           allowed_ip_ranges = [
-            "184.89.240.160/30",
+            "184.89.240.160/30", 
             "20.37.158.0/23",
             "20.37.194.0/24",
             "20.38.34.0/23"
@@ -58,31 +61,68 @@ jobs:
           client_id = "$ARM_CLIENT_ID"
           client_secret = "$ARM_CLIENT_SECRET"
           EOF
-          
-          # Create temporary backend config
+
           cat > backend_override.tf <<EOF
           terraform {
             backend "local" {}
           }
           EOF
+
+          # Init
+          SECONDS=0
+          terraform init -no-color > staging_init.log 2>&1
+          init_status=$?
+          init_duration=$SECONDS
           
-          echo "Running Terraform Init..."
-          terraform init -no-color > staging_init.log 2>&1 || { cat staging_init.log; exit 1; }
+          if [ $init_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat staging_init.log
+            exit 1
+          fi
+          echo "Duration: ${init_duration}s"
+          echo "Output: $(cat staging_init.log)"
 
-          echo "Running Terraform Validate..."
-          terraform validate -no-color > staging_validate.log 2>&1 || { cat staging_validate.log; exit 1; }
+          # Validate  
+          echo "Test: Staging Terraform Validate"
+          SECONDS=0
+          terraform validate -no-color > staging_validate.log 2>&1
+          validate_status=$?
+          validate_duration=$SECONDS
 
-          echo "Running Terraform Plan..."
-          terraform plan -no-color -input=false > staging_plan.log 2>&1 || {
-            echo "=== Plan Failed ==="
-            echo "Debugging Output:"
+          if [ $validate_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat staging_validate.log
+            exit 1
+          fi
+          echo "Duration: ${validate_duration}s"
+          echo "Output: $(cat staging_validate.log)"
+
+          # Plan
+          echo "Test: Staging Terraform Plan" 
+          SECONDS=0
+          terraform plan -no-color -input=false > staging_plan.log 2>&1
+          plan_status=$?
+          plan_duration=$SECONDS
+
+          if [ $plan_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            echo "Duration: ${plan_duration}s"
+            echo "Output:"
             cat staging_plan.log
             TF_LOG=DEBUG terraform plan -no-color -input=false > staging_debug.log 2>&1
             cat staging_debug.log
             exit 1
-          }
-          
-          # Clean up temporary files
+          fi
+          echo "Duration: ${plan_duration}s"
+          echo "Output: Plan generated successfully"
+
+          # Cleanup
           rm backend_override.tf terraform.tfvars
 
   validate:
