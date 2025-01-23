@@ -31,16 +31,15 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: "1.5.0"
+
       - name: Test Networking Module
         run: |
           cd modules/networking
-          
           echo "Test: Networking Module Init"
           SECONDS=0
           terraform init -no-color > networking_init.log 2>&1
           init_status=$?
           init_duration=$SECONDS
-          
           if [ $init_status -eq 0 ]; then
             echo "Status: ✅ PASS"
           else
@@ -56,7 +55,6 @@ jobs:
           terraform validate -no-color > networking_validate.log 2>&1
           validate_status=$?
           validate_duration=$SECONDS
-
           if [ $validate_status -eq 0 ]; then
             echo "Status: ✅ PASS"
           else
@@ -66,6 +64,109 @@ jobs:
           fi
           echo "Duration: ${validate_duration}s"
           echo "Output: $(cat networking_validate.log)"
+          cd ../..
+
+      - name: Test Security Module
+        run: |
+          cd modules/security
+          echo "Test: Security Module Init"
+          SECONDS=0
+          terraform init -no-color > security_init.log 2>&1
+          init_status=$?
+          init_duration=$SECONDS
+          if [ $init_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat security_init.log
+            exit 1
+          fi
+          echo "Duration: ${init_duration}s"
+          echo "Output: $(cat security_init.log)"
+
+          echo "Test: Security Module Validate"
+          SECONDS=0
+          terraform validate -no-color > security_validate.log 2>&1
+          validate_status=$?
+          validate_duration=$SECONDS
+          if [ $validate_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat security_validate.log
+            exit 1
+          fi
+          echo "Duration: ${validate_duration}s"
+          echo "Output: $(cat security_validate.log)"
+          cd ../..
+
+      - name: Test Storage Module
+        run: |
+          cd modules/storage
+          echo "Test: Storage Module Init"
+          SECONDS=0
+          terraform init -no-color > storage_init.log 2>&1
+          init_status=$?
+          init_duration=$SECONDS
+          if [ $init_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat storage_init.log
+            exit 1
+          fi
+          echo "Duration: ${init_duration}s"
+          echo "Output: $(cat storage_init.log)"
+
+          echo "Test: Storage Module Validate"
+          SECONDS=0
+          terraform validate -no-color > storage_validate.log 2>&1
+          validate_status=$?
+          validate_duration=$SECONDS
+          if [ $validate_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat storage_validate.log
+            exit 1
+          fi
+          echo "Duration: ${validate_duration}s"
+          echo "Output: $(cat storage_validate.log)"
+          cd ../..
+
+      - name: Test Compute Module
+        run: |
+          cd modules/compute
+          echo "Test: Compute Module Init"
+          SECONDS=0
+          terraform init -no-color > compute_init.log 2>&1
+          init_status=$?
+          init_duration=$SECONDS
+          if [ $init_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat compute_init.log
+            exit 1
+          fi
+          echo "Duration: ${init_duration}s"
+          echo "Output: $(cat compute_init.log)"
+
+          echo "Test: Compute Module Validate"
+          SECONDS=0
+          terraform validate -no-color > compute_validate.log 2>&1
+          validate_status=$?
+          validate_duration=$SECONDS
+          if [ $validate_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat compute_validate.log
+            exit 1
+          fi
+          echo "Duration: ${validate_duration}s"
+          echo "Output: $(cat compute_validate.log)"
+          cd ../..
   
   backend-test:
     name: "Test Backend Configuration"
