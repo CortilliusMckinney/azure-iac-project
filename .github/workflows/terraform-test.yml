@@ -590,20 +590,14 @@ jobs:
 
   deploy:
     name: "Deploy Infrastructure"
-    needs: [validate]
+    if: false  # Always skip but keep visible
+    needs: [validate, modules-test, backend-test, dev-test, staging-test, prod-test]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
-      - uses: actions/checkout@v3
-      - name: Azure CLI Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: "1.5.0"
-      - name: Terraform Init
-        run: terraform init
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
+      - name: Future Deployment Steps
+        run: |
+          echo "Future deployment will include:"
+          echo "1. Deploy to dev environment"
+          echo "2. Deploy to staging with validation"
+          echo "3. Deploy to prod with approvals"
+          echo "4. Post-deployment health checks"
