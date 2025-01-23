@@ -17,6 +17,104 @@ env:
   PYTHONUNBUFFERED: 1
 
 jobs:
+  modules-test:
+    name: "Test Infrastructure Modules"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Azure CLI Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.0"
+      - name: Test Modules
+        run: |
+          cd modules
+          
+          echo "Test: Infrastructure Modules Init"
+          SECONDS=0
+          terraform init -no-color > modules_init.log 2>&1
+          init_status=$?
+          init_duration=$SECONDS
+          
+          if [ $init_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat modules_init.log
+            exit 1
+          fi
+          echo "Duration: ${init_duration}s"
+          echo "Output: $(cat modules_init.log)"
+
+          echo "Test: Infrastructure Modules Validate"
+          SECONDS=0
+          terraform validate -no-color > modules_validate.log 2>&1
+          validate_status=$?
+          validate_duration=$SECONDS
+
+          if [ $validate_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat modules_validate.log
+            exit 1
+          fi
+          echo "Duration: ${validate_duration}s"
+          echo "Output: $(cat modules_validate.log)"
+  
+  backend-test:
+    name: "Test Backend Configuration"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Azure CLI Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.0"
+      - name: Test Backend
+        run: |
+          echo "Test: Backend Configuration Init"
+          SECONDS=0
+          terraform init -no-color > backend_init.log 2>&1
+          init_status=$?
+          init_duration=$SECONDS
+          
+          if [ $init_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat backend_init.log
+            exit 1
+          fi
+          echo "Duration: ${init_duration}s"
+          echo "Output: $(cat backend_init.log)"
+
+          echo "Test: Backend Configuration Validate"
+          SECONDS=0
+          terraform validate -no-color > backend_validate.log 2>&1
+          validate_status=$?
+          validate_duration=$SECONDS
+
+          if [ $validate_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat backend_validate.log
+            exit 1
+          fi
+          echo "Duration: ${validate_duration}s"
+          echo "Output: $(cat backend_validate.log)"
+  
   staging-test:
     name: "Test Staging Environment"
     runs-on: ubuntu-latest
