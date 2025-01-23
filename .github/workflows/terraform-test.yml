@@ -31,13 +31,13 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: "1.5.0"
-      - name: Test Modules
+      - name: Test Networking Module
         run: |
-          cd modules
+          cd modules/networking
           
-          echo "Test: Infrastructure Modules Init"
+          echo "Test: Networking Module Init"
           SECONDS=0
-          terraform init -no-color > modules_init.log 2>&1
+          terraform init -no-color > networking_init.log 2>&1
           init_status=$?
           init_duration=$SECONDS
           
@@ -45,15 +45,15 @@ jobs:
             echo "Status: ✅ PASS"
           else
             echo "Status: ❌ FAIL"
-            cat modules_init.log
+            cat networking_init.log
             exit 1
           fi
           echo "Duration: ${init_duration}s"
-          echo "Output: $(cat modules_init.log)"
+          echo "Output: $(cat networking_init.log)"
 
-          echo "Test: Infrastructure Modules Validate"
+          echo "Test: Networking Module Validate"
           SECONDS=0
-          terraform validate -no-color > modules_validate.log 2>&1
+          terraform validate -no-color > networking_validate.log 2>&1
           validate_status=$?
           validate_duration=$SECONDS
 
@@ -61,11 +61,11 @@ jobs:
             echo "Status: ✅ PASS"
           else
             echo "Status: ❌ FAIL"
-            cat modules_validate.log
+            cat networking_validate.log
             exit 1
           fi
           echo "Duration: ${validate_duration}s"
-          echo "Output: $(cat modules_validate.log)"
+          echo "Output: $(cat networking_validate.log)"
   
   backend-test:
     name: "Test Backend Configuration"
