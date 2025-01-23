@@ -115,6 +115,204 @@ jobs:
 
           rm backend_override.tf terraform.tfvars
 
+
+  dev-test:
+    name: "Test Dev Environment"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Azure CLI Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.0"
+      - name: Test Dev
+        run: |
+          echo "Test: Dev Terraform Init"
+          if [ ! -d "environments/dev" ]; then
+            echo "Status: ⚠️ SKIP" 
+            echo "Duration: 0s"
+            echo "Output: Dev environment directory not found"
+            exit 0
+          fi
+          cd environments/dev
+          
+          cat > terraform.tfvars <<EOF
+          environment = "dev"
+          location = "eastus"
+          project_name = "azure-iac-test"
+          subscription_id = "$ARM_SUBSCRIPTION_ID"
+          address_space = ["10.0.0.0/16"]
+          allowed_ip_ranges = [
+            "184.89.240.160/30", 
+            "20.37.158.0/23",
+            "20.37.194.0/24",
+            "20.38.34.0/23"
+          ]
+          admin_username = "azureuser"
+          tenant_id = "$ARM_TENANT_ID"
+          client_id = "$ARM_CLIENT_ID"
+          client_secret = "$ARM_CLIENT_SECRET"
+          EOF
+
+          cat > backend_override.tf <<EOF
+          terraform {
+            backend "local" {}
+          }
+          EOF
+
+          SECONDS=0
+          terraform init -no-color > dev_init.log 2>&1
+          init_status=$?
+          init_duration=$SECONDS
+          
+          if [ $init_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat dev_init.log
+            exit 1
+          fi
+          echo "Duration: ${init_duration}s"
+          echo "Output: $(cat dev_init.log)"
+
+          echo "Test: Dev Terraform Validate"
+          SECONDS=0
+          terraform validate -no-color > dev_validate.log 2>&1
+          validate_status=$?
+          validate_duration=$SECONDS
+
+          if [ $validate_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat dev_validate.log
+            exit 1
+          fi
+          echo "Duration: ${validate_duration}s"
+          echo "Output: $(cat dev_validate.log)"
+
+          echo "Test: Dev Terraform Plan" 
+          SECONDS=0
+          terraform plan -no-color -input=false > dev_plan.log 2>&1
+          plan_status=$?
+          plan_duration=$SECONDS
+
+          if [ $plan_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat dev_plan.log
+            exit 1
+          fi
+          echo "Duration: ${plan_duration}s"
+          echo "Output: Plan generated successfully"
+
+          rm backend_override.tf terraform.tfvars
+
+  prod-test:
+    name: "Test Production Environment"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Azure CLI Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: "1.5.0"
+      - name: Test Production
+        run: |
+          echo "Test: Production Terraform Init"
+          if [ ! -d "environments/prod" ]; then
+            echo "Status: ⚠️ SKIP" 
+            echo "Duration: 0s"
+            echo "Output: Production environment directory not found"
+            exit 0
+          fi
+          cd environments/prod
+          
+          cat > terraform.tfvars <<EOF
+          environment = "prod"
+          location = "eastus"
+          project_name = "azure-iac-test"
+          subscription_id = "$ARM_SUBSCRIPTION_ID"
+          address_space = ["10.0.0.0/16"]
+          allowed_ip_ranges = [
+            "184.89.240.160/30", 
+            "20.37.158.0/23",
+            "20.37.194.0/24",
+            "20.38.34.0/23"
+          ]
+          admin_username = "azureuser"
+          tenant_id = "$ARM_TENANT_ID"
+          client_id = "$ARM_CLIENT_ID"
+          client_secret = "$ARM_CLIENT_SECRET"
+          EOF
+
+          cat > backend_override.tf <<EOF
+          terraform {
+            backend "local" {}
+          }
+          EOF
+
+          SECONDS=0
+          terraform init -no-color > prod_init.log 2>&1
+          init_status=$?
+          init_duration=$SECONDS
+          
+          if [ $init_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat prod_init.log
+            exit 1
+          fi
+          echo "Duration: ${init_duration}s"
+          echo "Output: $(cat prod_init.log)"
+
+          echo "Test: Production Terraform Validate"
+          SECONDS=0
+          terraform validate -no-color > prod_validate.log 2>&1
+          validate_status=$?
+          validate_duration=$SECONDS
+
+          if [ $validate_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat prod_validate.log
+            exit 1
+          fi
+          echo "Duration: ${validate_duration}s"
+          echo "Output: $(cat prod_validate.log)"
+
+          echo "Test: Production Terraform Plan" 
+          SECONDS=0
+          terraform plan -no-color -input=false > prod_plan.log 2>&1
+          plan_status=$?
+          plan_duration=$SECONDS
+
+          if [ $plan_status -eq 0 ]; then
+            echo "Status: ✅ PASS"
+          else
+            echo "Status: ❌ FAIL"
+            cat prod_plan.log
+            exit 1
+          fi
+          echo "Duration: ${plan_duration}s"
+          echo "Output: Plan generated successfully"
+
+          rm backend_override.tf terraform.tfvars
+
+
   validate:
     name: "Validate Terraform"
     needs: staging-test
