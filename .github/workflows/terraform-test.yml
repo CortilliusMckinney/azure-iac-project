@@ -11,7 +11,7 @@ on:
 env:
   ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
   ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-  TF_VAR_subscription_id: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  ARM_SUBSCRIPTION_ID: "26fa681b-266b-4a85-b7f0-d0b40312d4e0"
   ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
   TF_LOG: DEBUG
   PYTHONUNBUFFERED: 1
