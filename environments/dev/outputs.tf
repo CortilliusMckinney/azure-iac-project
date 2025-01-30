@@ -9,15 +9,6 @@ output "network_info" {
   }
 }
 
-# # Storage outputs
-# output "storage_info" {
-#   description = "Storage configuration information"
-#   value = {
-#     storage_account_id    = module.storage.storage_account_id
-#     primary_blob_endpoint = module.storage.primary_blob_endpoint
-#   }
-# }
-
 # Security outputs
 output "security_info" {
   description = "Security configuration information"

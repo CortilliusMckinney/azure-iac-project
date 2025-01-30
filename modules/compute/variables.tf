@@ -29,3 +29,4 @@ variable "network_interface_id" {
   description = "ID of the network interface"
   type        = string
 }
+

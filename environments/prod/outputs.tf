@@ -23,21 +23,6 @@ output "vm_id" {
   value       = module.compute.vm_id
 }
 
-# # Storage Outputs
-# # commit 4j5k6l: Output the storage account ID
-# # This provides the unique ID of the storage account, useful for linking the storage account to other resources.
-# output "storage_account_id" {
-#   description = "ID of the created storage account"
-#   value       = module.storage.storage_account_id
-# }
-
-# # commit 5m6n7o: Output the storage account name
-# # Outputs the name of the storage account, useful for identifying and managing the storage account in the Azure portal.
-# output "storage_account_name" {
-#   description = "Name of the created storage account"
-#   value       = module.storage.storage_account_name
-# }
-
 # Security Outputs
 # commit 6p7q8r: Output the Key Vault ID
 # Provides the unique ID of the Key Vault for referencing in other modules or resources.
