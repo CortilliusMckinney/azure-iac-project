@@ -36,6 +36,11 @@ jobs:
           echo "TF_LOG=DEBUG" >> $GITHUB_ENV
           echo "PYTHONUNBUFFERED=1" >> $GITHUB_ENV
 
+      - name: Debug JSON in GitHub
+        run: |
+          echo "$CREDS" | jq .
+
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
