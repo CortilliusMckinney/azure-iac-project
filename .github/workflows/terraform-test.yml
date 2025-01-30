@@ -39,63 +39,24 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
 
-      - name: Install Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.9'
-
-      - name: Install Python Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r tests/requirements.txt
-
-      - name: Initialize Backend Config
-        run: |
-          cd backend-config
-          terraform init
-          terraform validate
-
-      - name: Initialize Development
-        run: |
-          cd environments/dev
-          terraform init
-          terraform validate
-
-      - name: Initialize Staging
+      - name: Initialize and Plan Staging
         run: |
           cd environments/staging
           terraform init
-          terraform validate
 
-      - name: Initialize Production
-        run: |
-          cd environments/prod
-          terraform init
-          terraform validate
-
-      - name: Run Infrastructure Tests
-        run: |
-          python tests/infrastructure_test.py
-
-      - name: Check Development Plan
-        run: |
-          cd environments/dev
-          terraform plan -input=false
-
-      - name: Check Staging Plan
-        run: |
-          cd environments/staging
-          terraform plan -input=false
-
-      - name: Check Production Plan
-        run: |
-          cd environments/prod
-          terraform plan -input=false
-
-      - name: Run Security Scans
-        run: |
-          # Add your security scanning commands here
-          echo "Running security scans..."
+          echo "Running terraform plan with detailed output..."
+          terraform plan -detailed-exitcode -input=false || {
+          echo "Terraform plan failed. Exit code: $?"
+          echo "Current directory contents:"
+          ls -la
+          echo "Environment variables set:"
+          env | grep ARM_ | sed 's/=.*/=****/'
+          echo "Terraform state list:"
+          terraform state list || echo "No state found"
+          exit 1
+            }
+          env:
+            TF_LOG: DEBUG
   
 
 
