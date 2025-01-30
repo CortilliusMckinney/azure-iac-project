@@ -21,6 +21,12 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Print clientId
+        run: |
+          CREDS='${{ secrets.AZURE_CREDENTIALS }}'
+          echo "$CREDS" | jq -r .clientId
+           
+
       - name: Set Azure Credentials as Environment Variables
         run: |
           CREDS=${{ secrets.AZURE_CREDENTIALS }}
