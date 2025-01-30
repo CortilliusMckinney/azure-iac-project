@@ -75,22 +75,6 @@ class BackendValidator(CommandRunner):
         self.container_name = "tfstate"
         self.location = "eastus"
 
-    # def run_command(self, command: str) -> tuple[int, str, str]:
-    #     ""Executes Azure CLI commands with proper authentication""
-    #     try:
-    #         process = subprocess.Popen(
-    #             command,
-    #             stdout=subprocess.PIPE,
-    #             stderr=subprocess.PIPE,
-    #             shell=True,
-    #             text=True
-    #         )
-    #         stdout, stderr = process.communicate()
-    #         return process.returncode, stdout, stderr
-    #     except Exception as e:
-    #         logging.error(f"Command execution failed: {e}")
-    #         return 1, "", str(e)
-
     def validate_backend(self) -> List[TestResult]:
         """Validates and ensures backend infrastructure exists"""
         logging.info("Starting backend validation")
@@ -281,21 +265,6 @@ class ModuleTester(CommandRunner):
         self.logger = logging.getLogger('ModuleTester')
         self.logger.setLevel(logging.DEBUG)
 
-# """     """ def run_command(self, command: str) -> tuple[int, str, str]:
-#         ""Execute a shell command and return the results""
-#         try:
-#             process = subprocess.Popen(
-#                 command,
-#                 stdout=subprocess.PIPE,
-#                 stderr=subprocess.PIPE,
-#                 shell=True,
-#                 text=True
-#             )
-#             stdout, stderr = process.communicate()
-#             return process.returncode, stdout, stderr
-#         except Exception as e:
-#             return 1, "", str(e) """ """
-
     def test_module(self, module_path: str, module_name: str) -> List[TestResult]:
         """Test a single Terraform module"""
         results = []
@@ -417,22 +386,6 @@ class InfrastructureTestRunner(CommandRunner):
         self.test_results: List[TestResult] = []
         self.backend_validator = BackendValidator()
         self.module_tester = ModuleTester()
-
-    # def run_command(self, command: str) -> tuple[int, str, str]:
-    #     """Execute shell command and return results"""
-    #     try:
-    #         process = subprocess.Popen(
-    #             command,
-    #             stdout=subprocess.PIPE,
-    #             stderr=subprocess.PIPE,
-    #             shell=True,
-    #             text=True
-    #         )
-    #         stdout, stderr = process.communicate()
-    #         return process.returncode, stdout, stderr
-    #     except Exception as e:
-    #         logging.error(f"Command execution failed: {e}")
-    #         return 1, "", str(e)
 
     def test_environment_configs(self):
         """Tests all environment terraform configurations"""
@@ -617,24 +570,7 @@ class InfrastructureTestRunner(CommandRunner):
         with open(report_file, 'w') as f:
             json.dump([result.to_dict() for result in self.test_results], f, indent=2)
 
-        print(f"\nTest report exported to {report_file}")
-
-    # def run_command(self, command: str) -> tuple[int, str, str]:
-    #     """Execute shell commands with proper error handling"""
-    #     try:
-    #         process = subprocess.Popen(
-    #             command,
-    #             stdout=subprocess.PIPE,
-    #             stderr=subprocess.PIPE,
-    #             shell=True,
-    #             text=True
-    #         )
-    #         stdout, stderr = process.communicate()
-    #         return process.returncode, stdout, stderr
-    #     except Exception as e:
-    #         logging.error(f"Command execution failed: {e}")
-    #         return 1, "", str(e)
-        
+        print(f"\nTest report exported to {report_file}")        
 
 """
 Commit: Environment Validation System
@@ -664,8 +600,6 @@ class EnvironmentValidator(ABC):
         except Exception as e:
             logging.error(f"Command execution failed: {e}")
             return 1, "", str(e)
-
-
 class DevelopmentValidator(EnvironmentValidator):
     def validate_environment(self) -> List[TestResult]:
         logging.info("Validating development environment")
@@ -778,9 +712,8 @@ class DevelopmentValidator(EnvironmentValidator):
                 f"Development environment directory not found at {dev_path}",
                 0.0
             ))
-
+        
         return results
-
 class StagingValidator(EnvironmentValidator):
     def validate_environment(self) -> List[TestResult]:
         logging.info("Validating staging environment")
