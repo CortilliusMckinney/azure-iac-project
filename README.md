@@ -1,7 +1,7 @@
 # Azure Infrastructure as Code (IaC) Project 🚀
 
 ## 📋 Project Overview
-In modern cloud environments, manually creating and managing infrastructure is time-consuming and error-prone. This project demonstrates enterprise-grade Infrastructure as Code (IaC) practices using Terraform with Azure.
+In modern cloud environments, manually creating and managing infrastructure is time-consuming and error-prone. This project demonstrates enterprise-grade Infrastructure as Code (IaC) practices using Terraform with Azure, featuring comprehensive testing, security controls, and environment progression.
 
 ## 🏗️ Architecture
 Our project implements a modular, multi-environment infrastructure:
@@ -10,39 +10,45 @@ azure-iac-project/
 ├── .github/                          # GitHub specific configurations
 │   └── workflows/                    # CI/CD pipeline definitions
 │       ├── terraform.yml            # Main infrastructure pipeline
-│       └── terraform-test.yml       # Testing workflow
-├── modules/                          # Reusable infrastructure modules
+│       └── infrastructure-test.yml   # Testing workflow
+├── modules/                          # Reusable Terraform modules
 │   ├── networking/                  # Network infrastructure
+│   │   ├── main.tf                 
+│   │   ├── variables.tf            
+│   │   ├── outputs.tf              
+│   │   └── README.md               
+│   ├── security/                    
 │   │   ├── main.tf
 │   │   ├── variables.tf
 │   │   ├── outputs.tf
-│   │   └── examples/
-│   ├── security/                    # Security configurations
+│   │   └── README.md
+│   ├── compute/                     
 │   │   ├── main.tf
 │   │   ├── variables.tf
 │   │   ├── outputs.tf
-│   │   └── examples/
-│   ├── compute/                     # Compute resources
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── outputs.tf
-│   │   └── examples/
-│   └── storage/                     # Storage resources
+│   │   └── README.md
+│   └── storage/                     
 │       ├── main.tf
 │       ├── variables.tf
 │       ├── outputs.tf
-│       └── examples/
+│       └── README.md
+├── backend-config/                   # State management
+│   ├── .terraform/                  # Terraform working directory
+│   ├── .vscode/                     # VS Code settings
+│   ├── scripts/                     # Utility scripts
+│   ├── backend.tf                   # Backend infrastructure
+│   ├── local.tf                    # Local variables
+│   ├── main.tf                     # Main configuration
+│   ├── outputs.tf                  # Output definitions
+│   ├── terraform.tfvars           # Variable values
+│   └── variables.tf               # Variable definitions
 ├── environments/                     # Environment configurations
-│   ├── dev/                        # Development environment
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── terraform.tfvars
-│   │   ├── backend.tf
-│   │   └── providers.tf
-│   ├── staging/                    # Staging environment
-│   │   └── [Same structure as dev]
-│   └── prod/                       # Production environment
-│       └── [Same structure as dev]
+│   ├── dev/                         # Development environment
+│   ├── staging/                     # Staging environment
+│   └── prod/                        # Production environment
+├── tests/                           # Testing framework
+│   ├── infrastructure_test.py      # Main testing script
+│   └── requirements.txt            # Python dependencies
 ├── docs/                            # Documentation
 │   ├── architecture/               # Design documentation
 │   │   ├── high-level-design.md
@@ -51,136 +57,125 @@ azure-iac-project/
 │   │   ├── deployment.md
 │   │   ├── disaster-recovery.md
 │   │   └── maintenance.md
-│   ├── procedures/                 # Process documentation
-│   │   ├── github-secrets.md
-│   │   └── cicd-workflow.md
-│   └── module-usage/              # Module implementation guides
+│   └── module-usage/               # Module implementation guides
 ├── scripts/                         # Utility scripts
 │   ├── deployment/                 # Deployment scripts
 │   ├── maintenance/                # Maintenance scripts
 │   └── version/                    # Version management scripts
-├── tests/                          # Testing framework
-│   ├── infrastructure_test.py      # Main testing script
-│   └── requirements.txt            # Python dependencies
-├── backend-config/                  # State management
-│   ├── main.tf                     # Backend infrastructure
-│   ├── variables.tf                # Backend variables
-│   └── terraform.tfvars            # Backend configuration
 ├── .gitignore                       # Git ignore patterns
 └── README.md                        # Project documentation
 ```
 
 ## 🛠️ Prerequisites
-- VS Code with extensions:
+- VS Code with required extensions:
   - HashiCorp Terraform
   - Azure Terraform
   - GitLens
 - Azure CLI installed and configured
-- Terraform installed
+- Terraform (version >= 1.0.0)
 - Git for version control
-- Python 3.9+ for infrastructure testing
+- Python 3.x (for testing framework)
 
 ## 🚀 Getting Started
 
-### 1. Initial Setup
+### 1. Environment Setup
 ```bash
 # Clone repository
 git clone [repository-url]
 cd azure-iac-project
 
-# Login to Azure
-az login
+# Install Python dependencies for testing
+pip install -r tests/requirements.txt
 
-# Initialize Terraform
-terraform init
+# Configure Azure credentials
+az login
 ```
 
 ### 2. Backend Configuration
 ```bash
 # Navigate to backend configuration
 cd backend-config
+
+# Update terraform.tfvars with your IP
+./scripts/update-terraform-ips.sh
+
+# Initialize and apply backend
 terraform init
 terraform apply
 
-# Configure state storage
-STORAGE_ACCOUNT_NAME=$(terraform output -raw storage_account_name)
+# Verify backend access
+./scripts/verify-backend-access.sh
 ```
 
-### 3. Environment Deployment
+### 3. Progressive Environment Deployment
 ```bash
-# Deploy to development
+# Start with development
 cd environments/dev
 terraform init
+terraform plan
 terraform apply
 
-# Follow similar steps for staging and production
-```
+# Test configuration
+python ../../tests/infrastructure_test.py --environment dev
 
-### 4. Run Infrastructure Tests
-```bash
-# Install test dependencies
-pip install -r tests/requirements.txt
-
-# Run tests
-python tests/infrastructure_test.py
+# Progress to staging and production after validation
 ```
 
 ## 🔒 Security Features
-- Secure state management with Azure Storage
-- Key Vault integration for secrets
-- Network security groups with advanced rules
-- Environment-specific security controls
-- RBAC implementation
-- Automated security scanning
-- Key rotation procedures
-- TLS 1.2 enforcement
-- Private endpoints
+- Enhanced state management security
+- Premium Key Vault configuration
+- Advanced network security groups
+- Comprehensive RBAC implementation
+- Enforced TLS 1.2
+- Private endpoints configuration
+- Just-in-time VM access
+- Advanced threat protection
 
-## 📊 Monitoring & Maintenance
-- Azure Monitor integration
-- Resource health tracking
-- Diagnostic settings
-- Cost optimization
-- Security compliance
-- Environment-specific monitoring
-- Automated health checks
+## 📊 Testing Framework
+- Automated module testing
+- Environment progression validation
+- Security compliance checks
+- Performance benchmarking
+- Integration testing
+- Cost optimization verification
 
 ## 🔄 CI/CD Pipeline
-- Automated validation
-- Infrastructure testing
-- Deployment automation
+- Progressive test activation
+- Module-level validation
+- Environment-specific testing
 - Security scanning
-- Environment-specific deployments
-- Automated test reporting
-- Plan review workflow
+- Change validation workflow
+- Automated deployment gates
 
 ## 📚 Documentation
-Comprehensive documentation available in `docs/`:
-- Architecture design
+Comprehensive documentation in `docs/`:
+- High-level architecture design
 - Network topology
-- Deployment guides
-- Disaster recovery
-- Maintenance procedures
-- Module usage guides
-- Testing procedures
-- Security configurations
+- Environment-specific guides
+- Disaster recovery procedures
+- Maintenance runbooks
+- Module implementation guides
+- Security procedures
+- CI/CD workflow documentation
+
+## ✨ Core Features
+- Modular infrastructure design
+- Secure state management
+- Multi-environment support
+- Comprehensive testing framework
+- Automated deployment pipeline
+- Advanced security controls
+- Cost optimization measures
+- Performance monitoring
 
 ## 🤝 Contributing
 1. Fork the repository
 2. Create feature branch
-3. Implement changes
-4. Submit pull request
-5. Wait for review
-
-## ✨ Core Features
-- Modular infrastructure design
-- State management with Azure Storage
-- Secure secret handling
-- Multi-environment support
-- Automated deployments
-- Comprehensive testing framework
-- Environment-specific validation
-- Comprehensive monitoring
+3. Enable relevant tests in CI/CD
+4. Implement changes
+5. Verify test results
+6. Submit pull request
+7. Await review
 
 ## 👥 Authors
 * [Your Organization/Team Name]
@@ -192,3 +187,4 @@ This project is licensed under the MIT License
 - HashiCorp Terraform documentation
 - Azure Cloud best practices
 - Infrastructure as Code community
+```
